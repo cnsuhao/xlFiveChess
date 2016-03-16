@@ -27,7 +27,7 @@ private:
     bool LogicalToPhysical(POINT &pt);
     bool PhysicalToLogical(POINT &pt);
     void DrawChessBoard(HDC hDC);
-    void DrawChessMan(HDC hDC, POINT pt, bool bBlack);
+    void DrawChessMan(HDC hDC, POINT pt, bool bBlack, bool bWeak = false);
 
 private:
     LRESULT OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
@@ -38,11 +38,13 @@ private:
     LRESULT OnLButtonDown(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnLButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnMouseMove(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnMButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
 private:
     const static int m_nChessBoardSize = FiveChess::CHESSBOARD_SIZE;
 
     FiveChess m_FiveChess;
+    FiveChess::ChessmanColor m_OperatorColor;;
 
     int m_nBlockSize;
     int m_nLeftBlank;
@@ -50,6 +52,8 @@ private:
 
     POINT m_ptMouseDown;
     POINT m_ptPreMove;
+
+    HFONT m_hFont;
 };
 
 

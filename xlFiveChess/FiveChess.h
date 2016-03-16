@@ -37,15 +37,18 @@ public:
     ChessmanColor WhoWins() const;
 
 public:
-    void NewGame();
+    void NewGame(ChessmanColor colorFirst);
     bool Move(int x, int y, ChessmanColor color);
     bool AutoMove(ChessmanColor color);
 
 private:
+    void ForceMove(int x, int y, ChessmanColor color);
+    bool IsGameOver();
     void Clear();
 
 private:
     ChessmanColor m_CurrentTurn;
+    ChessmanColor m_Winner;
     ChessData m_ChessData;
 };
 

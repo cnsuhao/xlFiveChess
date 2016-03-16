@@ -14,7 +14,7 @@
 #include <memory>
 #include <time.h>
 
-FiveChess::FiveChess() : m_CurrentTurn(None)
+FiveChess::FiveChess() : m_CurrentTurn(None), m_Winner(None)
 {
     Clear();
 }
@@ -36,13 +36,14 @@ FiveChess::ChessmanColor FiveChess::WhoseTurn() const
 
 FiveChess::ChessmanColor FiveChess::WhoWins() const
 {
-    return None;
+    return m_Winner;
 }
 
-void FiveChess::NewGame()
+void FiveChess::NewGame(ChessmanColor colorFirst)
 {
     Clear();
-    m_CurrentTurn = Black;
+    m_CurrentTurn = colorFirst;
+    m_Winner = None;
     srand((unsigned int)time(NULL));
 }
 
@@ -58,8 +59,7 @@ bool FiveChess::Move(int x, int y, ChessmanColor color)
         return false;
     }
 
-    m_ChessData[x][y] = color;
-    m_CurrentTurn = color == Black ? White : Black;
+    ForceMove(x, y, color);
 
     return true;
 }
@@ -78,13 +78,76 @@ bool FiveChess::AutoMove(ChessmanColor color)
 
         if (m_ChessData[x][y] == None)
         {
-            m_ChessData[x][y] = color;
-            m_CurrentTurn = color == Black ? White : Black;
+            ForceMove(x, y, color);
             break;
         }
     }
 
     return true;
+}
+
+void FiveChess::ForceMove(int x, int y, ChessmanColor color)
+{
+    m_ChessData[x][y] = color;
+
+    if (IsGameOver())
+    {
+        m_CurrentTurn = None;
+    }
+    else
+    {
+        m_CurrentTurn = color == Black ? White : Black;
+    }
+}
+
+bool FiveChess::IsGameOver()
+{
+    const int nDelta[][2] =
+    {
+        { 1, 0 },    // 向右
+        { 0, 1 },    // 向下
+        { 1, 1 },    // 向右下
+        { -1, 1 },   // 坐下
+    };
+
+    for (int i = 0; i < CHESSBOARD_SIZE; ++i)
+    {
+        for (int j = 0; j < CHESSBOARD_SIZE; ++j)
+        {
+            if (m_ChessData[i][j] == None)
+            {
+                continue;
+            }
+
+            for (int k = 0; k < _countof(nDelta); ++k)
+            {
+                if (i + nDelta[k][0] * 4 >= CHESSBOARD_SIZE ||
+                    j + nDelta[k][1] * 4 >= CHESSBOARD_SIZE)
+                {
+                    continue;
+                }
+
+                bool bWin = true;
+
+                for (int l = 1; l < 5; ++l)
+                {
+                    if (m_ChessData[i + nDelta[k][0] * l][j + nDelta[k][1] * l] != m_ChessData[i][j])
+                    {
+                        bWin = false;
+                        break;
+                    }
+                }
+
+                if (bWin)
+                {
+                    m_Winner = m_ChessData[i][j];
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 void FiveChess::Clear()
