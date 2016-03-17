@@ -13,20 +13,10 @@
 #define __FIVECHESS_H_DD3430E6_BC82_4E36_9D4F_99A5262E2B5B_INCLUDED__
 
 
+#include "FiveModel.h"
+
 class FiveChess
 {
-public:
-    static const int CHESSBOARD_SIZE = 15;
-
-    enum ChessmanColor
-    {
-        None = 0,
-        Black,
-        White,
-    };
-
-    typedef ChessmanColor ChessData[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
-
 public:
     FiveChess();
     ~FiveChess();

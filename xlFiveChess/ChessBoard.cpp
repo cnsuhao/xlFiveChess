@@ -14,7 +14,7 @@
 #include <xl/Windows/GUI/xlDPI.h>
 #include <windowsx.h>
 
-ChessBoard::ChessBoard() : m_OperatorColor(FiveChess::None), m_nBlockSize(0), m_nLeftBlank(0), m_nTopBlank(0), m_hFont(NULL)
+ChessBoard::ChessBoard() : m_OperatorColor(ChessmanColor_None), m_nBlockSize(0), m_nLeftBlank(0), m_nTopBlank(0), m_hFont(NULL)
 {
     AppendMsgHandler(WM_CREATE, MsgHandler(this, &ChessBoard::OnCreate));
     AppendMsgHandler(WM_ERASEBKGND, MsgHandler(this, &ChessBoard::OnEraseBkgnd));
@@ -117,7 +117,7 @@ LRESULT ChessBoard::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 {
     InitializeCoord();
 
-    m_OperatorColor = FiveChess::Black;
+    m_OperatorColor = ChessmanColor_Black;
     m_FiveChess.NewGame(m_OperatorColor);
 
     return 0;
@@ -145,28 +145,28 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
     DrawChessBoard(hDC);
 
-    const FiveChess::ChessData &data = m_FiveChess.GetChessData();
+    const ChessData &data = m_FiveChess.GetChessData();
 
     for (int i = 0; i < m_nChessBoardSize; ++i)
     {
         for (int j = 0; j < m_nChessBoardSize; ++j)
         {
-            if (data[i][j] != FiveChess::None)
+            if (data[i][j] != ChessmanColor_None)
             {
                 POINT pt = { i, j };
-                DrawChessMan(hDC, pt, data[i][j] == FiveChess::Black);
+                DrawChessMan(hDC, pt, data[i][j] == ChessmanColor_Black);
             }
         }
     }
 
     if (m_FiveChess.WhoseTurn() == m_OperatorColor && m_ptPreMove.x != -1 && m_ptPreMove.y != -1)
     {
-        DrawChessMan(hDC, m_ptPreMove, m_OperatorColor == FiveChess::Black, true);
+        DrawChessMan(hDC, m_ptPreMove, m_OperatorColor == ChessmanColor_Black, true);
     }
 
-    if (m_FiveChess.WhoWins() != FiveChess::None)
+    if (m_FiveChess.WhoWins() != ChessmanColor_None)
     {
-        LPCWSTR lpsz = m_FiveChess.WhoWins() == FiveChess::Black ? L"ºÚÆåÊ¤" : L"°×ÆåÊ¤";
+        LPCWSTR lpsz = m_FiveChess.WhoWins() == ChessmanColor_Black ? L"ºÚÆåÊ¤" : L"°×ÆåÊ¤";
         SetBkMode(hDC, TRANSPARENT);
         SelectFont(hDC, m_hFont);
         SetTextColor(hDC, RGB(0xff, 0x00, 0x00));
@@ -219,7 +219,7 @@ LRESULT ChessBoard::OnLButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     PhysicalToLogical(pt);
 
     m_FiveChess.Move(pt.x, pt.y, m_OperatorColor);
-    m_FiveChess.AutoMove(m_OperatorColor == FiveChess::Black ? FiveChess::White : FiveChess::Black);
+    m_FiveChess.AutoMove(m_OperatorColor == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black);
 
     Invalidate();
 
@@ -247,12 +247,12 @@ LRESULT ChessBoard::OnMouseMove(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 LRESULT ChessBoard::OnMButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
-    m_OperatorColor = m_OperatorColor == FiveChess::Black ? FiveChess::White : FiveChess::Black;
-    m_FiveChess.NewGame(FiveChess::Black);
+    m_OperatorColor = m_OperatorColor == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black;
+    m_FiveChess.NewGame(ChessmanColor_Black);
 
-    if (m_OperatorColor == FiveChess::White)
+    if (m_OperatorColor == ChessmanColor_White)
     {
-        m_FiveChess.AutoMove(FiveChess::Black);
+        m_FiveChess.AutoMove(ChessmanColor_Black);
     }
 
     Invalidate();

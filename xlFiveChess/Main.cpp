@@ -22,8 +22,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE     hInstance,
     _In_ LPWSTR        lpCmdLine,
     _In_ int           nCmdShow)
 {
-    XL_LOG_INFO_FUNCTION();
-
     MainWindow wnd;
 
     wnd.AppendMsgHandler(WM_DESTROY, [](HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) -> LRESULT

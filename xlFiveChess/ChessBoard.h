@@ -40,10 +40,10 @@ private:
     LRESULT OnMButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
 private:
-    const static int m_nChessBoardSize = FiveChess::CHESSBOARD_SIZE;
+    const static int m_nChessBoardSize = CHESSBOARD_SIZE;
 
     FiveChess m_FiveChess;
-    FiveChess::ChessmanColor m_OperatorColor;;
+    ChessmanColor m_OperatorColor;;
 
     int m_nBlockSize;
     int m_nLeftBlank;

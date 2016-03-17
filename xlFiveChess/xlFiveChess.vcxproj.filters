@@ -25,6 +25,9 @@
     <Filter Include="Game">
       <UniqueIdentifier>{34c40f71-5fa4-4d34-93f0-1bd4997df4e5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Algorithm">
+      <UniqueIdentifier>{13252c3c-8c52-40b1-b64b-eb12ced524fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainWindow.cpp">
@@ -39,6 +42,12 @@
     <ClCompile Include="FileChess.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="Valuation.cpp">
+      <Filter>Algorithm</Filter>
+    </ClCompile>
+    <ClCompile Include="Policy.cpp">
+      <Filter>Algorithm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainWindow.h">
@@ -51,6 +60,15 @@
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="FiveChess.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Valuation.h">
+      <Filter>Algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="Policy.h">
+      <Filter>Algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="FiveModel.h">
       <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>

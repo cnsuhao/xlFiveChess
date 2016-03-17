@@ -11,10 +11,12 @@
 
 
 #include "FiveChess.h"
+#include "Valuation.h"
+#include "Policy.h"
 #include <memory>
 #include <time.h>
 
-FiveChess::FiveChess() : m_CurrentTurn(None), m_Winner(None)
+FiveChess::FiveChess() : m_CurrentTurn(ChessmanColor_None), m_Winner(ChessmanColor_None)
 {
     Clear();
 }
@@ -24,17 +26,17 @@ FiveChess::~FiveChess()
 
 }
 
-const FiveChess::ChessData &FiveChess::GetChessData() const
+const ChessData &FiveChess::GetChessData() const
 {
     return m_ChessData;
 }
 
-FiveChess::ChessmanColor FiveChess::WhoseTurn() const
+ChessmanColor FiveChess::WhoseTurn() const
 {
     return m_CurrentTurn;
 }
 
-FiveChess::ChessmanColor FiveChess::WhoWins() const
+ChessmanColor FiveChess::WhoWins() const
 {
     return m_Winner;
 }
@@ -43,18 +45,18 @@ void FiveChess::NewGame(ChessmanColor colorFirst)
 {
     Clear();
     m_CurrentTurn = colorFirst;
-    m_Winner = None;
+    m_Winner = ChessmanColor_None;
     srand((unsigned int)time(NULL));
 }
 
 bool FiveChess::Move(int x, int y, ChessmanColor color)
 {
-    if (m_CurrentTurn == None || m_CurrentTurn != color)
+    if (m_CurrentTurn == ChessmanColor_None || m_CurrentTurn != color)
     {
         return false;
     }
 
-    if (m_ChessData[x][y] != None)
+    if (m_ChessData[x][y] != ChessmanColor_None)
     {
         return false;
     }
@@ -66,22 +68,31 @@ bool FiveChess::Move(int x, int y, ChessmanColor color)
 
 bool FiveChess::AutoMove(ChessmanColor color)
 {
-    if (m_CurrentTurn == None || m_CurrentTurn != color)
+    if (m_CurrentTurn == ChessmanColor_None || m_CurrentTurn != color)
     {
         return false;
     }
 
-    while (true)
-    {
-        int x = rand() % CHESSBOARD_SIZE;
-        int y = rand() % CHESSBOARD_SIZE;
+    LineInfoCollection ours, theirs;
+    Valuation::FindLine(m_ChessData, 1, color, true, &ours);
+    Valuation::FindLine(m_ChessData, 1, color == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black, true, &theirs);
+    Point pt = Policy::FindNextMove(ours, theirs);
 
-        if (m_ChessData[x][y] == None)
+    if (pt == INVALID_POSITION)
+    {
+        while (true)
         {
-            ForceMove(x, y, color);
-            break;
+            pt.x = rand() % CHESSBOARD_SIZE;
+            pt.y = rand() % CHESSBOARD_SIZE;
+
+            if (m_ChessData[pt.x][pt.y] == ChessmanColor_None)
+            {
+                break;
+            }
         }
     }
+
+    ForceMove(pt.x, pt.y, color);
 
     return true;
 }
@@ -92,62 +103,18 @@ void FiveChess::ForceMove(int x, int y, ChessmanColor color)
 
     if (IsGameOver())
     {
-        m_CurrentTurn = None;
+        m_CurrentTurn = ChessmanColor_None;
     }
     else
     {
-        m_CurrentTurn = color == Black ? White : Black;
+        m_CurrentTurn = color == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black;
     }
 }
 
 bool FiveChess::IsGameOver()
 {
-    const int nDelta[][2] =
-    {
-        { 1, 0 },    // 向右
-        { 0, 1 },    // 向下
-        { 1, 1 },    // 向右下
-        { -1, 1 },   // 坐下
-    };
-
-    for (int i = 0; i < CHESSBOARD_SIZE; ++i)
-    {
-        for (int j = 0; j < CHESSBOARD_SIZE; ++j)
-        {
-            if (m_ChessData[i][j] == None)
-            {
-                continue;
-            }
-
-            for (int k = 0; k < _countof(nDelta); ++k)
-            {
-                if (i + nDelta[k][0] * 4 >= CHESSBOARD_SIZE ||
-                    j + nDelta[k][1] * 4 >= CHESSBOARD_SIZE)
-                {
-                    continue;
-                }
-
-                bool bWin = true;
-
-                for (int l = 1; l < 5; ++l)
-                {
-                    if (m_ChessData[i + nDelta[k][0] * l][j + nDelta[k][1] * l] != m_ChessData[i][j])
-                    {
-                        bWin = false;
-                        break;
-                    }
-                }
-
-                if (bWin)
-                {
-                    m_Winner = m_ChessData[i][j];
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
+    m_Winner = Valuation::FindLine(m_ChessData, 5);
+    return m_Winner != ChessmanColor_None;
 }
 
 void FiveChess::Clear()
