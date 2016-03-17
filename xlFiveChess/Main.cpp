@@ -32,7 +32,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE     hInstance,
         return FALSE;
     });
 
-    if (!wnd.Create(nullptr, XL_DPI_X(0), XL_DPI_Y(0), XL_DPI_X(400), XL_DPI_Y(400), WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, 0, L"xlWindow", L"xlFiveChess"))
+    if (!wnd.Create(XL_DPI_X(600), XL_DPI_Y(600)))
     {
         MessageBox(nullptr, L"≥Ã–Ú≥ı ºªØ¥ÌŒÛ°£", L"¥ÌŒÛ", MB_OK | MB_ICONEXCLAMATION);
         return 0;

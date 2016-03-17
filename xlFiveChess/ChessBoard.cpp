@@ -19,7 +19,6 @@ ChessBoard::ChessBoard() : m_OperatorColor(FiveChess::None), m_nBlockSize(0), m_
     AppendMsgHandler(WM_CREATE, MsgHandler(this, &ChessBoard::OnCreate));
     AppendMsgHandler(WM_ERASEBKGND, MsgHandler(this, &ChessBoard::OnEraseBkgnd));
     AppendMsgHandler(WM_PAINT, MsgHandler(this, &ChessBoard::OnPaint));
-    //AppendMsgHandler(WM_WINDOWPOSCHANGING, MsgHandler(this, &ChessBoard::OnWindowPosChanging));
     AppendMsgHandler(WM_SIZE, MsgHandler(this, &ChessBoard::OnSize));
 
     AppendMsgHandler(WM_LBUTTONDOWN, MsgHandler(this, &ChessBoard::OnLButtonDown));
@@ -167,7 +166,7 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
     if (m_FiveChess.WhoWins() != FiveChess::None)
     {
-        LPCWSTR lpsz = m_FiveChess.WhoWins() == FiveChess::Black ? L"ºÚÆåÊ¤£¡" : L"°×ÆåÊ¤£¡";
+        LPCWSTR lpsz = m_FiveChess.WhoWins() == FiveChess::Black ? L"ºÚÆåÊ¤" : L"°×ÆåÊ¤";
         SetBkMode(hDC, TRANSPARENT);
         SelectFont(hDC, m_hFont);
         SetTextColor(hDC, RGB(0xff, 0x00, 0x00));
@@ -182,11 +181,6 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
     EndPaint(&ps);
 
-    return 0;
-}
-
-LRESULT ChessBoard::OnWindowPosChanging(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
     return 0;
 }
 

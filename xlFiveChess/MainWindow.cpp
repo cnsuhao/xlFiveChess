@@ -16,13 +16,16 @@ MainWindow::MainWindow()
 {
     AppendMsgHandler(WM_CREATE, MsgHandler(this, &MainWindow::OnCreate));
     AppendMsgHandler(WM_ERASEBKGND, MsgHandler(this, &MainWindow::OnEraseBkgnd));
-    //AppendMsgHandler(WM_WINDOWPOSCHANGING, MsgHandler(this, &MainWindow::OnWindowPosChanging));
-    //AppendMsgHandler(WM_SIZE, MsgHandler(this, &MainWindow::OnSize));
 }
 
 MainWindow::~MainWindow()
 {
 
+}
+
+bool MainWindow::Create(int nWidth, int nHeight)
+{
+    return xl::Windows::Window::Create(nullptr, 0, 0, nWidth, nHeight, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, 0, L"AlphaFiveMainWindow", L"AlphaFive");
 }
 
 LRESULT MainWindow::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
@@ -42,14 +45,4 @@ LRESULT MainWindow::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 LRESULT MainWindow::OnEraseBkgnd(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
     return TRUE;
-}
-
-LRESULT MainWindow::OnWindowPosChanging(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
-    return 0;
-}
-
-LRESULT MainWindow::OnSize(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
-    return 0;
 }
