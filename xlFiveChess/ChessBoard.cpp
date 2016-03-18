@@ -121,7 +121,7 @@ void ChessBoard::DrawChessBoard(HDC hDC)
     SelectPen(hDC, hOldPen);
 }
 
-void ChessBoard::DrawChessMan(HDC hDC, POINT pt, bool bBlack, bool bHiglight, bool bWeak)
+void ChessBoard::DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bHiglight, bool bWeak)
 {
     LogicalToPhysical(pt);
     int nDelta = m_nBlockSize / 3;
@@ -191,14 +191,14 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
                 POINT pt = { i, j };
                 const FiveChessAction &last = m_FiveChess.GetLastAction();
                 bool bHighlight = (pt.x == last.Position.x && pt.y == last.Position.y);
-                DrawChessMan(hDC, pt, data[i][j] == ChessmanColor_Black, bHighlight);
+                DrawChessman(hDC, pt, data[i][j] == ChessmanColor_Black, bHighlight);
             }
         }
     }
 
     if (m_FiveChess.WhoseTurn() == m_OperatorColor && m_ptPreMove.x != -1 && m_ptPreMove.y != -1)
     {
-        DrawChessMan(hDC, m_ptPreMove, m_OperatorColor == ChessmanColor_Black, false, true);
+        DrawChessman(hDC, m_ptPreMove, m_OperatorColor == ChessmanColor_Black, false, true);
     }
 
     if (m_FiveChess.WhoWins() != ChessmanColor_None)

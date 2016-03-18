@@ -127,6 +127,8 @@ bool FiveChess::Undo()
         m_ChessHistory.PopBack();
     }
 
+    m_Winner = ChessmanColor_None;
+
     return true;
 }
 
