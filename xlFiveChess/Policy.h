@@ -18,7 +18,7 @@
 class Policy
 {
 public:
-    static Point FindNextMove(LineInfoCollection ours, LineInfoCollection theirs);
+    static Point FindNextMove(const ChessData &data, ChessmanColor currentTurn);
 
 private:
     static Point FindNextMove(LineInfoCollection::Iterator &it, LineInfoCollection::Iterator &itEnd, int nMinCount);

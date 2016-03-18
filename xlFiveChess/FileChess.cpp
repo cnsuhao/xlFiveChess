@@ -41,6 +41,17 @@ ChessmanColor FiveChess::WhoWins() const
     return m_Winner;
 }
 
+const FiveChessAction &FiveChess::GetLastAction() const
+{
+    if (!m_ChessHistory.Empty())
+    {
+        return *m_ChessHistory.ReverseBegin();
+    }
+
+    static FiveChessAction dummy;
+    return dummy;
+}
+
 void FiveChess::NewGame(ChessmanColor colorFirst)
 {
     Clear();
@@ -73,21 +84,26 @@ bool FiveChess::AutoMove(ChessmanColor color)
         return false;
     }
 
-    LineInfoCollection ours, theirs;
-    Valuation::FindLine(m_ChessData, 1, color, true, &ours);
-    Valuation::FindLine(m_ChessData, 1, color == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black, true, &theirs);
-    Point pt = Policy::FindNextMove(ours, theirs);
+    Point pt = Policy::FindNextMove(m_ChessData, color);
 
     if (pt == INVALID_POSITION)
     {
-        while (true)
+        if (m_ChessHistory.Empty())
         {
-            pt.x = rand() % CHESSBOARD_SIZE;
-            pt.y = rand() % CHESSBOARD_SIZE;
-
-            if (m_ChessData[pt.x][pt.y] == ChessmanColor_None)
+            pt.x = CHESSBOARD_SIZE / 2;
+            pt.y = CHESSBOARD_SIZE / 2;
+        }
+        else
+        {
+            while (true)
             {
-                break;
+                pt.x = rand() % CHESSBOARD_SIZE;
+                pt.y = rand() % CHESSBOARD_SIZE;
+
+                if (m_ChessData[pt.x][pt.y] == ChessmanColor_None)
+                {
+                    break;
+                }
             }
         }
     }
@@ -97,9 +113,27 @@ bool FiveChess::AutoMove(ChessmanColor color)
     return true;
 }
 
+bool FiveChess::Undo()
+{
+    if (m_ChessHistory.Size() < 2)
+    {
+        return false;
+    }
+
+    for (int i = 0; i < 2; ++i)
+    {
+        const FiveChessAction &action = *m_ChessHistory.ReverseBegin();
+        m_ChessData[action.Position.x][action.Position.y] = ChessmanColor_None;
+        m_ChessHistory.PopBack();
+    }
+
+    return true;
+}
+
 void FiveChess::ForceMove(int x, int y, ChessmanColor color)
 {
     m_ChessData[x][y] = color;
+    m_ChessHistory.PushBack(FiveChessAction(color, Point(x, y)));
 
     if (IsGameOver())
     {
@@ -107,7 +141,7 @@ void FiveChess::ForceMove(int x, int y, ChessmanColor color)
     }
     else
     {
-        m_CurrentTurn = color == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black;
+        m_CurrentTurn = !color;
     }
 }
 
@@ -120,4 +154,5 @@ bool FiveChess::IsGameOver()
 void FiveChess::Clear()
 {
     memset(&m_ChessData, 0, sizeof(m_ChessData));
+    m_ChessHistory.Clear();
 }

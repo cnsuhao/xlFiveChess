@@ -22,12 +22,15 @@ public:
     ChessBoard();
     ~ChessBoard();
 
+    void NewGame();
+    void Undo();
+
 private:
     void InitializeCoord();
     bool LogicalToPhysical(POINT &pt);
     bool PhysicalToLogical(POINT &pt);
     void DrawChessBoard(HDC hDC);
-    void DrawChessMan(HDC hDC, POINT pt, bool bBlack, bool bWeak = false);
+    void DrawChessMan(HDC hDC, POINT pt, bool bBlack, bool bHiglight = false, bool bWeak = false);
 
 private:
     LRESULT OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
@@ -37,7 +40,6 @@ private:
     LRESULT OnLButtonDown(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnLButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnMouseMove(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
-    LRESULT OnMButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
 private:
     const static int m_nChessBoardSize = CHESSBOARD_SIZE;

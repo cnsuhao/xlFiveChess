@@ -19,7 +19,7 @@ namespace Valuation
 {
     int EvalLine(const LineInfo &li);
     bool LineComparor(const LineInfo &lhs, const LineInfo &rhs);
-    ChessmanColor FindLine(const ChessData &data, int nCount, ChessmanColor colorToFind = ChessmanColor_None, bool bFindAll = false, LineInfoCollection *pResult = nullptr);
+    ChessmanColor FindLine(const ChessData &data, int nCount, ChessmanColor colorToFind = ChessmanColor_None, bool bFindAll = false, bool bAllowHole = false, LineInfoCollection *pResult = nullptr);
 }
 
 #endif // #ifndef __VALUATION_H_DDAACB0E_04CD_4F20_8D01_ADC295196245_INCLUDED__

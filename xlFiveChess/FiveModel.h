@@ -14,8 +14,10 @@
 
 
 #include <xl/Common/Containers/xlArray.h>
+#include <xl/Common/Math/xlMathBase.h>
 
-static const int CHESSBOARD_SIZE = 15;
+static const int CHESSBOARD_SIZE    = 15;
+static const int WIN_LENGTH         = 5;
 
 enum ChessmanColor
 {
@@ -24,6 +26,17 @@ enum ChessmanColor
     ChessmanColor_White,
 };
 
+inline ChessmanColor operator ! (ChessmanColor color)
+{
+    static const ChessmanColor colorMap[] =
+    {
+        /* ChessmanColor_None   => */ ChessmanColor_None,
+        /* ChessmanColor_Black  => */ ChessmanColor_White,
+        /* ChessmanColor_White  => */ ChessmanColor_Black,
+    };
+    return colorMap[color];
+}
+
 typedef ChessmanColor ChessData[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
 typedef double ChessboardValue[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
 
@@ -31,6 +44,11 @@ struct Point
 {
     int x;
     int y;
+
+    Point(int x = 0, int y = 0) : x(x), y(y)
+    {
+
+    }
 };
 
 static const Point INVALID_POSITION = { -1, -1 };
@@ -56,8 +74,9 @@ static const Point DirectionDef[] =
 
 struct BlockedInfo
 {
-    bool HeadBlocked;   // 起始端受阻
-    bool TailBlocked;   // 结尾端受阻
+    int HeadRemain; // 起始端剩余空白数，受阻的话给 0
+    int TailRemain; // 结尾端剩余空白数，受阻的话给 0
+    int HolePos;    // 中间空白位置，没有的话给 0
 };
 
 struct LineInfo
@@ -97,11 +116,12 @@ inline bool operator != (const Point &lhs, const Point &rhs)
 
 #include "Log.h"
 
-#define LOG_LINE(li)                                                            \
-    XL_LOG_INFO(L"[Line] Pos:(%d,%d), Dir:(%d,%d), Blocked:(%d,%d), Count:%d",  \
-                (li).Position.x, (li).Position.y,                               \
-                DirectionDef[(li).Direction].x, DirectionDef[(li).Direction].y, \
-                (li).Blocked.HeadBlocked, (li).Blocked.TailBlocked,             \
-                (li).Count)
+#define LOG_LINE(li)                                                                        \
+    XL_LOG_INFO(L"[Line] Pos:(%d,%d), Dir:(%d,%d), Count:%d, Blocked:(%d,%d,%d), Value: %d",\
+                (li).Position.x, (li).Position.y,                                           \
+                DirectionDef[(li).Direction].x, DirectionDef[(li).Direction].y,             \
+                (li).Count,                                                                 \
+                (li).Blocked.HeadRemain, (li).Blocked.TailRemain, (li).Blocked.HolePos,     \
+                Valuation::EvalLine((li)))
 
 #endif // #ifndef __FIVEMODEL_H_1FE257EC_AAA2_43D3_B918_BF9AE7FAE21B_INCLUDED__

@@ -24,7 +24,6 @@ ChessBoard::ChessBoard() : m_OperatorColor(ChessmanColor_None), m_nBlockSize(0),
     AppendMsgHandler(WM_LBUTTONDOWN, MsgHandler(this, &ChessBoard::OnLButtonDown));
     AppendMsgHandler(WM_LBUTTONUP, MsgHandler(this, &ChessBoard::OnLButtonUp));
     AppendMsgHandler(WM_MOUSEMOVE, MsgHandler(this, &ChessBoard::OnMouseMove));
-    AppendMsgHandler(WM_MBUTTONUP, MsgHandler(this, &ChessBoard::OnMButtonUp));
 
     ZeroMemory(&m_ptMouseDown, sizeof(m_ptMouseDown));
 
@@ -37,6 +36,27 @@ ChessBoard::ChessBoard() : m_OperatorColor(ChessmanColor_None), m_nBlockSize(0),
 ChessBoard::~ChessBoard()
 {
     DeleteObject(m_hFont);
+}
+
+void ChessBoard::NewGame()
+{
+    m_OperatorColor = !m_OperatorColor;
+    m_FiveChess.NewGame(ChessmanColor_Black);
+
+    if (m_OperatorColor == ChessmanColor_White)
+    {
+        m_FiveChess.AutoMove(ChessmanColor_Black);
+    }
+
+    Invalidate();
+}
+
+void ChessBoard::Undo()
+{
+    if (m_FiveChess.Undo())
+    {
+        Invalidate();
+    }
 }
 
 void ChessBoard::InitializeCoord()
@@ -101,14 +121,29 @@ void ChessBoard::DrawChessBoard(HDC hDC)
     SelectPen(hDC, hOldPen);
 }
 
-void ChessBoard::DrawChessMan(HDC hDC, POINT pt, bool bBlack, bool bWeak)
+void ChessBoard::DrawChessMan(HDC hDC, POINT pt, bool bBlack, bool bHiglight, bool bWeak)
 {
     LogicalToPhysical(pt);
     int nDelta = m_nBlockSize / 3;
 
-    HBRUSH hBrush = (HBRUSH)GetStockObject(bBlack ? (bWeak ? DKGRAY_BRUSH : BLACK_BRUSH) : (bWeak ? LTGRAY_BRUSH  : WHITE_BRUSH));
+    int nBrushTable[][2] =
+    {                  /*  !bWeak       bWeak*/
+        /* !bBlack => */ { WHITE_BRUSH, LTGRAY_BRUSH },
+        /* bBlack  => */ { BLACK_BRUSH, DKGRAY_BRUSH },
+    };
+
+    HBRUSH hBrush = (HBRUSH)GetStockObject(nBrushTable[bBlack][bWeak]);
     HBRUSH hOldBrush = SelectBrush(hDC, hBrush);
     Ellipse(hDC, pt.x - nDelta, pt.y - nDelta, pt.x + nDelta, pt.y + nDelta);
+
+    if (bHiglight)
+    {
+        nDelta /= 3;
+        RECT rc = { pt.x - nDelta, pt.y - nDelta, pt.x + nDelta, pt.y + nDelta };
+        SetBkColor(hDC, RGB(0x80, 0x80, 0x80));
+        ExtTextOut(hDC, 0, 0, ETO_OPAQUE, &rc, NULL, 0, NULL);
+    }
+
     SelectBrush(hDC, hOldBrush);
 }
 
@@ -154,14 +189,16 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
             if (data[i][j] != ChessmanColor_None)
             {
                 POINT pt = { i, j };
-                DrawChessMan(hDC, pt, data[i][j] == ChessmanColor_Black);
+                const FiveChessAction &last = m_FiveChess.GetLastAction();
+                bool bHighlight = (pt.x == last.Position.x && pt.y == last.Position.y);
+                DrawChessMan(hDC, pt, data[i][j] == ChessmanColor_Black, bHighlight);
             }
         }
     }
 
     if (m_FiveChess.WhoseTurn() == m_OperatorColor && m_ptPreMove.x != -1 && m_ptPreMove.y != -1)
     {
-        DrawChessMan(hDC, m_ptPreMove, m_OperatorColor == ChessmanColor_Black, true);
+        DrawChessMan(hDC, m_ptPreMove, m_OperatorColor == ChessmanColor_Black, false, true);
     }
 
     if (m_FiveChess.WhoWins() != ChessmanColor_None)
@@ -216,10 +253,14 @@ LRESULT ChessBoard::OnLButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     }
 
     POINT pt = m_ptMouseDown;
-    PhysicalToLogical(pt);
+
+    if (!PhysicalToLogical(pt))
+    {
+        return 0;
+    }
 
     m_FiveChess.Move(pt.x, pt.y, m_OperatorColor);
-    m_FiveChess.AutoMove(m_OperatorColor == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black);
+    m_FiveChess.AutoMove(!m_OperatorColor);
 
     Invalidate();
 
@@ -238,21 +279,6 @@ LRESULT ChessBoard::OnMouseMove(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     {
         m_ptPreMove.x = -1;
         m_ptPreMove.y = -1;
-    }
-
-    Invalidate();
-
-    return 0;
-}
-
-LRESULT ChessBoard::OnMButtonUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
-    m_OperatorColor = m_OperatorColor == ChessmanColor_Black ? ChessmanColor_White : ChessmanColor_Black;
-    m_FiveChess.NewGame(ChessmanColor_Black);
-
-    if (m_OperatorColor == ChessmanColor_White)
-    {
-        m_FiveChess.AutoMove(ChessmanColor_Black);
     }
 
     Invalidate();
