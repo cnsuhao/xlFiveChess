@@ -155,7 +155,7 @@ void ChessBoard::DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bHiglight, bo
     int nDelta = m_nBlockSize / 3;
 
     int nBrushTable[][2] =
-    {                  /*  !bWeak       bWeak*/
+    {                  /*  !bWeak       bWeak         */
         /* !bBlack => */ { WHITE_BRUSH, LTGRAY_BRUSH },
         /* bBlack  => */ { BLACK_BRUSH, DKGRAY_BRUSH },
     };

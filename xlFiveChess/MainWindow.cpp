@@ -101,13 +101,13 @@ LRESULT MainWindow::OnWindowPosChanging(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
     WINDOWPOS *pPos = (WINDOWPOS *)lParam;
     if ((pPos->flags & SWP_NOSIZE) == 0)
     {
-        if (pPos->cx < XL_DPI_X(250))
+        if (pPos->cx < XL_DPI_X(600))
         {
-            pPos->cx = XL_DPI_X(250);
+            pPos->cx = XL_DPI_X(600);
         }
-        if (pPos->cy < XL_DPI_Y(250))
+        if (pPos->cy < XL_DPI_Y(640))
         {
-            pPos->cy = XL_DPI_Y(250);
+            pPos->cy = XL_DPI_Y(640);
         }
     }
     return 0;
