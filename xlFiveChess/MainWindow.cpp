@@ -11,6 +11,7 @@
 
 
 #include "MainWindow.h"
+#include <xl/Windows/GUI/xlDPI.h>
 
 enum
 {
@@ -29,6 +30,8 @@ MainWindow::MainWindow()
 {
     AppendMsgHandler(WM_CREATE, MsgHandler(this, &MainWindow::OnCreate));
     AppendMsgHandler(WM_ERASEBKGND, MsgHandler(this, &MainWindow::OnEraseBkgnd));
+    AppendMsgHandler(WM_WINDOWPOSCHANGING, MsgHandler(this, &MainWindow::OnWindowPosChanging));
+    AppendMsgHandler(WM_SIZE, MsgHandler(this, &MainWindow::OnSize));
 
     AppendMenuCommandMsgHandler(MENU_ID_NEW_GAME, CommandMsgHandler(this, &MainWindow::OnMenuNewGame));
     AppendMenuCommandMsgHandler(MENU_ID_UNDO, CommandMsgHandler(this, &MainWindow::OnMenuUndo));
@@ -63,7 +66,16 @@ bool MainWindow::Create(int nWidth, int nHeight)
     m_MenuBar.AppendMenu(MF_POPUP, (UINT_PTR)(HMENU)m_MenuRule, L"规则(&R)");
     m_MenuBar.AppendMenu(MF_STRING, MENU_ID_ABOUT, L"关于(&A)");
 
-    return xl::Windows::Window::Create(nullptr, 0, 0, nWidth, nHeight, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, 0, L"AlphaFiveMainWindow", L"AlphaFive", m_MenuBar);
+    int nStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX | WS_CLIPCHILDREN;
+    return xl::Windows::Window::Create(nullptr, 0, 0, nWidth, nHeight, nStyle, 0, L"AlphaFiveMainWindow", L"AlphaFive", m_MenuBar);
+}
+
+void MainWindow::Relayout()
+{
+    RECT rc = {};
+    GetClientRect(&rc);
+
+    m_ChessBoard.MoveWindow(&rc);
 }
 
 LRESULT MainWindow::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
@@ -72,10 +84,9 @@ LRESULT MainWindow::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
     //SetIcon(hIcon);
     //SetIcon(hIcon, FALSE);
 
-    RECT rc = {};
-    GetClientRect(&rc);
+    m_ChessBoard.Create(hWnd, 0, 0, 0, 0, WS_CHILD | WS_VISIBLE);
 
-    m_ChessBoard.Create(hWnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, WS_CHILD | WS_VISIBLE);
+    Relayout();
 
     return 0;
 }
@@ -83,6 +94,29 @@ LRESULT MainWindow::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 LRESULT MainWindow::OnEraseBkgnd(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
     return TRUE;
+}
+
+LRESULT MainWindow::OnWindowPosChanging(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+    WINDOWPOS *pPos = (WINDOWPOS *)lParam;
+    if ((pPos->flags & SWP_NOSIZE) == 0)
+    {
+        if (pPos->cx < XL_DPI_X(250))
+        {
+            pPos->cx = XL_DPI_X(250);
+        }
+        if (pPos->cy < XL_DPI_Y(250))
+        {
+            pPos->cy = XL_DPI_Y(250);
+        }
+    }
+    return 0;
+}
+
+LRESULT MainWindow::OnSize(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+    Relayout();
+    return 0;
 }
 
 LRESULT MainWindow::OnMenuNewGame(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled)

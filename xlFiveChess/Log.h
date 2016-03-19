@@ -14,8 +14,7 @@
 
 
 #ifdef _DEBUG
-#define XL_LOG_TARGET_CONSOLE                           // Output to console
-//#define XL_LOG_TARGET_FILE L"xlFiveChess.log"           // Output to file, supporting environment variables
+#define XL_LOG_TARGET_DEBUGGER                          // Output to console
 #define XL_LOG_LEVEL_FATAL                              // Output log level fatal
 #define XL_LOG_LEVEL_ERROR                              // Output log level error
 #define XL_LOG_LEVEL_WARNING                            // Output log level warning

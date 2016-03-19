@@ -11,34 +11,21 @@
 
 
 #include "Policy.h"
-#include <xl/Common/Algorithm/xlSort.h>
 #include "Valuation.h"
 
 
 Point Policy::FindNextMove(const ChessData &data, ChessmanColor currentTurn)
 {
+    XL_LOG_INFO_FUNCTION();
+
     LineInfoCollection ours, theirs;
     Valuation::FindLine(data, 1, currentTurn, true, true, &ours);
     Valuation::FindLine(data, 1, !currentTurn, true, true, &theirs);
 
-    if (!ours.Empty())
-    {
-        xl::Sort::QuickSort(&ours[0], ours.Size(), xl::Function<bool(const LineInfo &, const LineInfo &)>(Valuation::LineComparor));
-    }
-    if (!theirs.Empty())
-    {
-        xl::Sort::QuickSort(&theirs[0], theirs.Size(), xl::Function<bool(const LineInfo &, const LineInfo &)>(Valuation::LineComparor));
-    }
-
     LineInfoCollection::Iterator itOurs = ours.Begin();
     LineInfoCollection::Iterator itTheirs = theirs.Begin();
 
-    if ((itOurs != ours.End() && itOurs->Count >= WIN_LENGTH) || (itTheirs != theirs.End() && itTheirs->Count >= WIN_LENGTH))
-    {
-        return INVALID_POSITION;
-    }
-
-    for (int i = WIN_LENGTH - 1; i > 0; --i)
+    for (int i = CHESS_LENGTH - 1; i > 0; --i)
     {
         XL_LOG_INFO(L"Find our %d-line", i);
         Point pt = FindNextMove(itOurs, ours.End(), i);
@@ -68,22 +55,22 @@ Point Policy::FindNextMove(LineInfoCollection::Iterator &it, LineInfoCollection:
         {
             break;
         }
-        if (it->Blocked.HolePos > 0)
+        if (it->Blank.HolePos > 0)
         {
             LOG_LINE(*it);
-            return it->Position + DirectionDef[it->Direction] * it->Blocked.HolePos;
+            return it->Position + DirectionDef[it->Direction] * it->Blank.HolePos;
         }
-        if (it->Blocked.HeadRemain > 0 && it->Blocked.HeadRemain >= it->Blocked.TailRemain)
+        if (it->Blank.HeadRemain > 0 && it->Blank.HeadRemain >= it->Blank.TailRemain)
         {
             LOG_LINE(*it);
             return it->Position - DirectionDef[it->Direction];
         }
-        if (it->Blocked.TailRemain > 0 && it->Blocked.TailRemain > it->Blocked.HeadRemain)
+        if (it->Blank.TailRemain > 0 && it->Blank.TailRemain > it->Blank.HeadRemain)
         {
             LOG_LINE(*it);
-            return it->Position + DirectionDef[it->Direction] * (it->Count + (it->Blocked.HolePos > 0 ? 1 : 0));
+            return it->Position + DirectionDef[it->Direction] * (it->Count + (it->Blank.HolePos > 0 ? 1 : 0));
         }
-        if (it->Blocked.HeadRemain > 0 && it->Blocked.TailRemain)
+        if (it->Blank.HeadRemain > 0 && it->Blank.TailRemain)
         {
             LOG_LINE(*it);
             return it->Position - DirectionDef[it->Direction];

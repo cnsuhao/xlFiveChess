@@ -30,7 +30,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE     hInstance,
         return FALSE;
     });
 
-    if (!wnd.Create(XL_DPI_X(600), XL_DPI_Y(600)))
+    if (!wnd.Create(XL_DPI_X(600), XL_DPI_Y(640)))
     {
         MessageBox(nullptr, L"≥Ã–Ú≥ı ºªØ¥ÌŒÛ°£", L"¥ÌŒÛ", MB_OK | MB_ICONEXCLAMATION);
         return 0;

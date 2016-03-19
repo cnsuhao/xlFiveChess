@@ -17,7 +17,10 @@
 #include <xl/Common/Math/xlMathBase.h>
 
 static const int CHESSBOARD_SIZE    = 15;
-static const int WIN_LENGTH         = 5;
+static const int CHESS_LENGTH         = 5;
+
+static const wchar_t * const COORD_TAG_HORZ[CHESSBOARD_SIZE] = { L"A", L"B", L"C", L"D", L"E", L"F", L"G", L"H", L"I", L"J", L"K", L"L", L"M", L"N", L"O" };
+static const wchar_t * const COORD_TAG_VERT[CHESSBOARD_SIZE] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11", L"12", L"13", L"14", L"15" };
 
 enum ChessmanColor
 {
@@ -60,30 +63,31 @@ enum Direction
     Direction_DownLeft,
     Direction_DownRight,
 
-    Direction_CountOrNone,
+    Direction_Count,
 };
 
-static const Point DirectionDef[] =
+static const Point DirectionDef[Direction_Count] =
 {
     {  1, 0 },    // 向右，x += 1（向左的不定义，交换起始点就可以了，下同）
     {  0, 1 },    // 向下，y += 1（向上的不定义）
     { -1, 1 },    // 左下，x -= 1，y += 1（右上的不定义）
-    {  1, 1 },    // 右下，x += 1，y += 1（坐上的不定义）
-    {  0, 0 },    // 无方向，用于一个子的情况
+    {  1, 1 },    // 右下，x += 1，y += 1（左上的不定义）
 };
 
-struct BlockedInfo
+static const wchar_t * const DIRECTION_TAG[Direction_Count] = { L"─", L"│", L"╱", L"╲" };
+
+struct BlankInfo
 {
-    int HeadRemain; // 起始端剩余空白数，受阻的话给 0
-    int TailRemain; // 结尾端剩余空白数，受阻的话给 0
-    int HolePos;    // 中间空白位置，没有的话给 0
+    int HeadRemain; // 起始端剩余空位数，受阻的话给 0
+    int TailRemain; // 结尾端剩余空位数，受阻的话给 0
+    int HolePos;    // 中间空位位置，没有的话给 0
 };
 
 struct LineInfo
 {
     int         Count;      // 个数
     Direction   Direction;  // 方向
-    BlockedInfo Blocked;    // 受阻情况
+    BlankInfo   Blank;      // 空位情况
     Point       Position;   // 起始位置
 };
 
@@ -116,12 +120,12 @@ inline bool operator != (const Point &lhs, const Point &rhs)
 
 #include "Log.h"
 
-#define LOG_LINE(li)                                                                        \
-    XL_LOG_INFO(L"[Line] Pos:(%d,%d), Dir:(%d,%d), Count:%d, Blocked:(%d,%d,%d), Value: %d",\
-                (li).Position.x, (li).Position.y,                                           \
-                DirectionDef[(li).Direction].x, DirectionDef[(li).Direction].y,             \
-                (li).Count,                                                                 \
-                (li).Blocked.HeadRemain, (li).Blocked.TailRemain, (li).Blocked.HolePos,     \
+#define LOG_LINE(li)                                                                \
+    XL_LOG_INFO(L"%d-line, %s%s, %s, L%dR%dM%d, %d",                                \
+                (li).Count,                                                         \
+                COORD_TAG_HORZ[(li).Position.x], COORD_TAG_VERT[(li).Position.y],   \
+                DIRECTION_TAG[(li).Direction],                                      \
+                (li).Blank.HeadRemain, (li).Blank.TailRemain, (li).Blank.HolePos,   \
                 Valuation::EvalLine((li)))
 
 #endif // #ifndef __FIVEMODEL_H_1FE257EC_AAA2_43D3_B918_BF9AE7FAE21B_INCLUDED__

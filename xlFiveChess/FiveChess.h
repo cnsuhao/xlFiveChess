@@ -38,6 +38,7 @@ public:
 public:
     const ChessData &GetChessData() const;
     ChessmanColor WhoseTurn() const;
+    bool IsGameOver() const;
     ChessmanColor WhoWins() const;
     const FiveChessAction &GetLastAction() const;
 
@@ -49,7 +50,7 @@ public:
 
 private:
     void ForceMove(int x, int y, ChessmanColor color);
-    bool IsGameOver();
+    bool CheckGameOver();
     void Clear();
 
 private:

@@ -42,8 +42,6 @@ private:
     LRESULT OnMouseMove(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
 private:
-    const static int m_nChessBoardSize = CHESSBOARD_SIZE;
-
     FiveChess m_FiveChess;
     ChessmanColor m_OperatorColor;;
 
@@ -55,6 +53,7 @@ private:
     POINT m_ptPreMove;
 
     HFONT m_hFont;
+    HFONT m_hFontBig;
 };
 
 
