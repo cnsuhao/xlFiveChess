@@ -137,11 +137,7 @@ void ChessBoard::DrawChessBoard(HDC hDC)
 
     // 中心点打个标记
     POINT pt = { CHESSBOARD_SIZE / 2, CHESSBOARD_SIZE / 2 };
-    LogicalToPhysical(pt);
-    RECT rc = { pt.x - m_nBlockSize / 8, pt.y - m_nBlockSize / 8, pt.x + m_nBlockSize / 8, pt.y + m_nBlockSize / 8 };
-    COLORREF nOldBkColor = SetBkColor(hDC, RGB(0x00, 0x00, 0x00));
-    ExtTextOut(hDC, 0, 0, ETO_OPAQUE, &rc, NULL, 0, NULL);
-    SetBkColor(hDC, nOldBkColor);
+    DrawHint(hDC, pt, RGB(0x00, 0x00, 0x00));
 
     SetTextColor(hDC, nOldTextColor);
     SetBkMode(hDC, nOldBkMode);
@@ -149,7 +145,7 @@ void ChessBoard::DrawChessBoard(HDC hDC)
     SelectPen(hDC, hOldPen);
 }
 
-void ChessBoard::DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bHiglight, bool bWeak)
+void ChessBoard::DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bWeak)
 {
     LogicalToPhysical(pt);
     int nDelta = m_nBlockSize / 3;
@@ -164,17 +160,17 @@ void ChessBoard::DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bHiglight, bo
     HBRUSH hOldBrush = SelectBrush(hDC, hBrush);
     Ellipse(hDC, pt.x - nDelta, pt.y - nDelta, pt.x + nDelta, pt.y + nDelta);
 
-    if (bHiglight)
-    {
-        nDelta /= 3;
-        RECT rc = { pt.x - nDelta, pt.y - nDelta, pt.x + nDelta, pt.y + nDelta };
-        SetBkColor(hDC, RGB(0x80, 0x80, 0x80));
-        ExtTextOut(hDC, 0, 0, ETO_OPAQUE, &rc, NULL, 0, NULL);
-    }
-
     SelectBrush(hDC, hOldBrush);
 }
 
+void ChessBoard::DrawHint(HDC hDC, POINT pt, COLORREF color)
+{
+    LogicalToPhysical(pt);
+    RECT rc = { pt.x - m_nBlockSize / 8, pt.y - m_nBlockSize / 8, pt.x + m_nBlockSize / 8, pt.y + m_nBlockSize / 8 };
+    COLORREF nOldBkColor = SetBkColor(hDC, color);
+    ExtTextOut(hDC, 0, 0, ETO_OPAQUE, &rc, NULL, 0, NULL);
+    SetBkColor(hDC, nOldBkColor);
+}
 
 LRESULT ChessBoard::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
@@ -218,16 +214,21 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
             if (data[i][j] != ChessmanColor_None)
             {
                 POINT pt = { i, j };
+                DrawChessman(hDC, pt, data[i][j] == ChessmanColor_Black);
+
                 const FiveChessAction &last = m_FiveChess.GetLastAction();
-                bool bHighlight = (pt.x == last.Position.x && pt.y == last.Position.y);
-                DrawChessman(hDC, pt, data[i][j] == ChessmanColor_Black, bHighlight);
+
+                if (pt.x == last.Position.x && pt.y == last.Position.y)
+                {
+                    DrawHint(hDC, pt, RGB(0x80, 0x80, 0x80));
+                }
             }
         }
     }
 
     if (m_FiveChess.WhoseTurn() == m_OperatorColor && m_ptPreMove.x != -1 && m_ptPreMove.y != -1)
     {
-        DrawChessman(hDC, m_ptPreMove, m_OperatorColor == ChessmanColor_Black, false, true);
+        DrawChessman(hDC, m_ptPreMove, m_OperatorColor == ChessmanColor_Black, true);
     }
 
     if (m_FiveChess.IsGameOver())
@@ -248,6 +249,41 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
         SetTextColor(hDC, nOldTextColor);
         SelectFont(hDC, hOldFont);
         SetBkMode(hDC, nOldBkMode);
+    }
+    else
+    {
+        LineInfoCollection preWin = m_FiveChess.GetPreWinLines();
+        COLORREF colors[] =
+        {
+            /* ChessmanColor_None  => */ RGB(0x00, 0x00, 0x00),
+            /* ChessmanColor_Black => */ RGB(0x40, 0x40, 0x40),
+            /* ChessmanColor_White => */ RGB(0xc0, 0xc0, 0xc0),
+        };
+
+        for (LineInfoCollection::Iterator it = preWin.Begin(); it != preWin.End(); ++it)
+        {
+            if (it->Blank.HeadRemain > 0)
+            {
+                Point point = it->Position - DirectionDef[it->Direction];
+                POINT pt = { point.x, point.y };
+                LogicalToPhysical(pt);
+                DrawHint(hDC, pt, colors[it->Color]);
+            }
+            if (it->Blank.TailRemain > 0)
+            {
+                Point point = it->Position + DirectionDef[it->Direction] * (it->Count + (it->Blank.HolePos > 0 ? 1 : 0));
+                POINT pt = { point.x, point.y };
+                LogicalToPhysical(pt);
+                DrawHint(hDC, pt, colors[it->Color]);
+            }
+            if (it->Blank.HolePos > 0)
+            {
+                Point point = it->Position + DirectionDef[it->Direction] * it->Blank.HolePos;
+                POINT pt = { point.x, point.y };
+                LogicalToPhysical(pt);
+                DrawHint(hDC, pt, colors[it->Color]);
+            }
+        }
     }
 
     BitBlt(ps.hdc, 0, 0, rc.right - rc.left, rc.bottom - rc.top, hDC, 0, 0, SRCCOPY);

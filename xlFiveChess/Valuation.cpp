@@ -66,6 +66,7 @@ ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanCol
 
                 LineInfo li =
                 {
+                    data[i][j],
                     1,
                     (Direction)k,
                     { 0, 0, 0 },

@@ -85,10 +85,11 @@ struct BlankInfo
 
 struct LineInfo
 {
-    int         Count;      // 个数
-    Direction   Direction;  // 方向
-    BlankInfo   Blank;      // 空位情况
-    Point       Position;   // 起始位置
+    ChessmanColor Color;    // 颜色
+    int           Count;    // 个数
+    Direction     Direction;// 方向
+    BlankInfo     Blank;    // 空位情况
+    Point         Position; // 起始位置
 };
 
 typedef xl::Array<LineInfo> LineInfoCollection;

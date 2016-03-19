@@ -41,6 +41,7 @@ public:
     bool IsGameOver() const;
     ChessmanColor WhoWins() const;
     const FiveChessAction &GetLastAction() const;
+    LineInfoCollection GetPreWinLines(ChessmanColor color = ChessmanColor_None) const;
 
 public:
     void NewGame(ChessmanColor colorFirst);
