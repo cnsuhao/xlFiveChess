@@ -30,11 +30,16 @@ private:
     LRESULT OnMenuNewGame(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled);
     LRESULT OnMenuUndo(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled);
     LRESULT OnMenuQuit(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled);
+    LRESULT OnMenuForbidden(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled);
+    LRESULT OnMenuExchange(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled);
+    LRESULT OnMenuDoubleMove(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled);
+    LRESULT OnMenuAbout(HWND hWnd, WORD wID, WORD wCode, HWND hControl, BOOL &bHandled);
 
 private:
     ChessBoard m_ChessBoard;
-    xl::Windows::Menu m_MainMenu;
-    xl::Windows::Menu m_PopupMenu;
+    xl::Windows::Menu m_MenuBar;
+    xl::Windows::Menu m_MenuGame;
+    xl::Windows::Menu m_MenuRule;
 };
 
 #endif // #ifndef __MAINWINDOW_H_4AE40315_5E8F_4AA6_83E4_0532ABFF1647_INCLUDED__
