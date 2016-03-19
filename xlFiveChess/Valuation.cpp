@@ -15,7 +15,7 @@
 
 int Valuation::EvalLine(const LineInfo &li)
 {
-    return li.Count * 100 + li.Blocked.HeadRemain * 10 + li.Blocked.TailRemain * 10 - (li.Blocked.HolePos > 0 ? 1 : 0) * 1;
+    return li.Count * 100 + li.Blocked.HeadRemain * 10 + li.Blocked.TailRemain * 10 - (li.Blocked.HolePos > 0 ? 1 : 0) * 10 + (abs(DirectionDef[li.Direction].x) + abs(DirectionDef[li.Direction].y)) * 5;
 }
 
 bool Valuation::LineComparor(const LineInfo &lhs, const LineInfo &rhs)

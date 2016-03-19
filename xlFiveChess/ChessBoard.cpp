@@ -53,7 +53,7 @@ void ChessBoard::NewGame()
 
 void ChessBoard::Undo()
 {
-    if (m_FiveChess.Undo())
+    if (m_FiveChess.Undo(2))
     {
         Invalidate();
     }

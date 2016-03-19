@@ -113,16 +113,17 @@ bool FiveChess::AutoMove(ChessmanColor color)
     return true;
 }
 
-bool FiveChess::Undo()
+bool FiveChess::Undo(size_t nSteps)
 {
-    if (m_ChessHistory.Size() < 2)
+    if (m_ChessHistory.Size() < nSteps)
     {
         return false;
     }
 
-    for (int i = 0; i < 2; ++i)
+    for (size_t i = 0; i < nSteps; ++i)
     {
         const FiveChessAction &action = *m_ChessHistory.ReverseBegin();
+        m_CurrentTurn = action.Color;
         m_ChessData[action.Position.x][action.Position.y] = ChessmanColor_None;
         m_ChessHistory.PopBack();
     }

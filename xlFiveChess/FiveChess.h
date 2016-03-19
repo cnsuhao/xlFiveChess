@@ -45,7 +45,7 @@ public:
     void NewGame(ChessmanColor colorFirst);
     bool Move(int x, int y, ChessmanColor color);
     bool AutoMove(ChessmanColor color);
-    bool Undo();
+    bool Undo(size_t nSteps);
 
 private:
     void ForceMove(int x, int y, ChessmanColor color);
