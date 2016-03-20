@@ -13,6 +13,7 @@
 #include "Policy.h"
 #include "Valuation.h"
 #include <time.h>
+#include <float.h>
 #include "Log.h"
 
 #define LOG_LINE(li)                                                                \
@@ -57,16 +58,12 @@ public:
     {
         XL_LOG_INFO_FUNCTION();
 
-        ChessData d = data;
-
-        Score currentScore;
-        currentScore.OurScore = Valuation::EvalChessboard(d, currentTurn, &currentScore.TheirScore);
-        XL_LOG_INFO(L"Currenr score: %lf,%lf", currentScore.OurScore, currentScore.TheirScore);
+        ChessData &d = (ChessData &)data;
 
         Point ptOurs = INVALID_POSITION;    // 我方最佳点
-        double dOurDeltaMax = 0.0;          // 我方下在最佳点后的对我方局面评分的提高数
+        double dOurScoreMax = -DBL_MAX;     // 我方下在最佳点后的我方局面评分
         Point ptTheirs = INVALID_POSITION;  // 对方最佳点
-        double dTheirDeltaMax = 0.0;        // 对方下在最佳点后的对对方局面评分的提高数
+        double dTheirScoreMax = -DBL_MAX;   // 对方下在最佳点后的对方局面评分
 
         for (int i = 0; i < CHESSBOARD_SIZE; ++i)
         {
@@ -75,35 +72,30 @@ public:
                 if (data[i][j] == ChessmanColor_None)
                 {
                     d[i][j] = currentTurn;
-                    Score o;
-                    o.OurScore = Valuation::EvalChessboard(d, currentTurn, &o.TheirScore);
+                    double dOurScore = Valuation::EvalChessboard(d, currentTurn);
                     d[i][j] = !currentTurn;
-                    Score t;
-                    t.OurScore = Valuation::EvalChessboard(d, currentTurn, &t.TheirScore);
+                    double dTheirScore = -Valuation::EvalChessboard(d, currentTurn);
                     d[i][j] = ChessmanColor_None;
-                    XL_LOG_INFO(L"Pos:%s%s, OurMove: %lf,%lf, TheirMove: %lf,%lf", COORD_TAG_HORZ[i], COORD_TAG_VERT[j], o.OurScore, o.TheirScore, t.OurScore, t.TheirScore);
+                    XL_LOG_INFO(L"Pos:%s%s, OurMove: %lf, TheirMove: %lf", COORD_TAG_HORZ[i], COORD_TAG_VERT[j], dOurScore, dTheirScore);
 
-                    double nOurDelta = (o.OurScore - o.TheirScore) - (currentScore.OurScore - currentScore.TheirScore);
-                    double nTheirDelta = (t.TheirScore - t.OurScore) - (currentScore.TheirScore - currentScore.OurScore);
-
-                    if (nOurDelta > dOurDeltaMax)
+                    if (dOurScore > dOurScoreMax)
                     {
-                        dOurDeltaMax = nOurDelta;
+                        dOurScoreMax = dOurScore;
                         ptOurs = Point(i, j);
                     }
 
-                    if (nTheirDelta > dTheirDeltaMax)
+                    if (dTheirScore > dTheirScoreMax)
                     {
-                        dTheirDeltaMax = nTheirDelta;
+                        dTheirScoreMax = dTheirScore;
                         ptTheirs = Point(i, j);
                     }
                 }
             }
         }
 
-        XL_LOG_INFO(L"Pos:%s%s, OurDeltaMax:%lf", COORD_TAG_HORZ[ptOurs.x], COORD_TAG_VERT[ptOurs.y], dOurDeltaMax);
-        XL_LOG_INFO(L"Pos:%s%s, TheirDeltaMax:%lf", COORD_TAG_HORZ[ptTheirs.x], COORD_TAG_VERT[ptTheirs.y], dTheirDeltaMax);
-        return dOurDeltaMax >= dTheirDeltaMax ? ptOurs : ptTheirs;
+        XL_LOG_INFO(L"Pos:%s%s, OurScoreMax:%lf", COORD_TAG_HORZ[ptOurs.x], COORD_TAG_VERT[ptOurs.y], dOurScoreMax);
+        XL_LOG_INFO(L"Pos:%s%s, TheirScoreMax:%lf", COORD_TAG_HORZ[ptTheirs.x], COORD_TAG_VERT[ptTheirs.y], dTheirScoreMax);
+        return dOurScoreMax >= dTheirScoreMax ? ptOurs : ptTheirs;
     }
 };
 

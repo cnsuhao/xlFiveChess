@@ -14,20 +14,21 @@
 #include <xl/Common/Meta/xlAssert.h>
 #include <xl/Common/Algorithm/xlSort.h>
 #include <math.h>
+#include "Log.h"
 
 double Valuation::EvalLine(const LineInfo &li)
 {
-    double nScore = 0;
+    double dScore = 0;
 
-    nScore += pow(10000.0, li.Count);
-    nScore *= 100.0 * (li.Blank.HeadRemain > 0 ? 1 : 0) + (li.Blank.TailRemain > 0 ? 1 : 0) - (li.Blank.HolePos > 0 ? 1 : 0) / 2.0;
-    nScore *= 10 * (li.Blank.HeadRemain + li.Blank.TailRemain);
-    nScore *= 10 * (abs(DirectionDef[li.Direction].x) + abs(DirectionDef[li.Direction].y));
+    dScore += pow(10000.0, li.Count);
+    dScore *= 100 * ((li.Blank.HeadRemain > 0 ? 1 : 0) + (li.Blank.TailRemain > 0 ? 1 : 0) - (li.Blank.HolePos > 0 ? 1 : 0));
+    dScore *= 10 * (li.Blank.HeadRemain + li.Blank.TailRemain);
+    dScore *= 10 * (abs(DirectionDef[li.Direction].x) + abs(DirectionDef[li.Direction].y));
 
-    return nScore;
+    return dScore;
 }
 
-double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval, double *pOppositeScore)
+double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval)
 {
     LineInfoCollection lic;
     Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &lic);
@@ -44,12 +45,7 @@ double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEva
         nScore[it->Color] += EvalLine(*it);
     }
 
-    if (pOppositeScore != nullptr)
-    {
-        *pOppositeScore = nScore[!colorToEval];
-    }
-
-    return nScore[colorToEval];
+    return nScore[colorToEval] - nScore[!colorToEval];
 }
 
 ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanColor colorToFind, bool bFindAll, bool bAllowHole, LineInfoCollection *pResult)

@@ -58,7 +58,7 @@ void ChessBoard::NewGame()
 
 void ChessBoard::Undo()
 {
-    if (m_FiveChess.Undo(2))
+    if (m_FiveChess.Undo(m_FiveChess.WhoseTurn() == m_OperatorColor ? 2 : 1))
     {
         Invalidate();
     }
@@ -262,14 +262,14 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
         for (LineInfoCollection::Iterator it = preWin.Begin(); it != preWin.End(); ++it)
         {
-            if (it->Blank.HeadRemain > 0)
+            if (it->Blank.HeadRemain > 0 && !(it->Count == CHESS_LENGTH - 1 && it->Blank.HolePos > 0))
             {
                 Point point = it->Position - DirectionDef[it->Direction];
                 POINT pt = { point.x, point.y };
                 LogicalToPhysical(pt);
                 DrawHint(hDC, pt, colors[it->Color]);
             }
-            if (it->Blank.TailRemain > 0)
+            if (it->Blank.TailRemain > 0 && !(it->Count == CHESS_LENGTH - 1 && it->Blank.HolePos > 0))
             {
                 Point point = it->Position + DirectionDef[it->Direction] * (it->Count + (it->Blank.HolePos > 0 ? 1 : 0));
                 POINT pt = { point.x, point.y };

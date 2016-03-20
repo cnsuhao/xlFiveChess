@@ -148,15 +148,9 @@ void FiveChess::ForceMove(int x, int y, ChessmanColor color)
 {
     m_ChessData[x][y] = color;
     m_ChessHistory.PushBack(FiveChessAction(color, Point(x, y)));
+    m_CurrentTurn = !color;
 
-    if (CheckGameOver())
-    {
-        m_CurrentTurn = ChessmanColor_None;
-    }
-    else
-    {
-        m_CurrentTurn = !color;
-    }
+    CheckGameOver();
 }
 
 bool FiveChess::CheckGameOver()
@@ -168,6 +162,6 @@ bool FiveChess::CheckGameOver()
 
 void FiveChess::Clear()
 {
-    m_ChessData.Clear();
+    memset(m_ChessData, ChessmanColor_None, sizeof(m_ChessData));
     m_ChessHistory.Clear();
 }

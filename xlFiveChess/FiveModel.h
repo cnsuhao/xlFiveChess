@@ -40,37 +40,7 @@ inline ChessmanColor operator ! (ChessmanColor color)
     return colorMap[color];
 }
 
-class ChessData
-{
-public:
-    inline ChessData()
-    {
-        Clear();
-    }
-
-    inline void Clear()
-    {
-        memset(m_data, ChessmanColor_None, sizeof(m_data));
-    }
-
-    inline ChessData &operator =(const ChessData &that)
-    {
-        memcpy(this->m_data, that.m_data, sizeof(m_data));
-    }
-
-    inline ChessmanColor *operator [](int i)
-    {
-        return m_data[i];
-    }
-
-    inline const ChessmanColor *operator [](int i) const
-    {
-        return m_data[i];
-    }
-
-private:
-    ChessmanColor m_data[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
-};
+typedef ChessmanColor ChessData[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
 
 struct Point
 {
