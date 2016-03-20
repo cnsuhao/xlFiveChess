@@ -15,13 +15,19 @@
 
 #include "FiveModel.h"
 
-class Policy
+// 策略定义，越在上面的越优先
+enum PolicyName
 {
-public:
-    static Point FindNextMove(const ChessData &data, ChessmanColor currentTurn);
+    Policy_SimpleAI,
+    Policy_Random,
+    Policy_Center,
 
-private:
-    static Point FindNextMove(LineInfoCollection::Iterator &it, LineInfoCollection::Iterator &itEnd, int nMinCount);
+    Policy_Count,
+};
+
+namespace Policy
+{
+    Point FindNextMove(PolicyName policy, const ChessData &data, ChessmanColor currentTurn);
 };
 
 #endif // #ifndef __POLICY_H_E4AC519F_30F6_447A_B737_DADAA6CCD9BE_INCLUDED__

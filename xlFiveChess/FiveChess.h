@@ -15,6 +15,7 @@
 
 #include "FiveModel.h"
 #include <xl/Common/Containers/xlArray.h>
+#include "Policy.h"
 
 struct FiveChessAction
 {

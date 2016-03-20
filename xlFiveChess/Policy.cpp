@@ -12,73 +12,184 @@
 
 #include "Policy.h"
 #include "Valuation.h"
+#include <time.h>
 
 
-Point Policy::FindNextMove(const ChessData &data, ChessmanColor currentTurn)
+struct IPolicy
 {
-    XL_LOG_INFO_FUNCTION();
-
-    LineInfoCollection ours, theirs;
-    Valuation::FindLine(data, 1, currentTurn, true, true, &ours);
-    Valuation::FindLine(data, 1, !currentTurn, true, true, &theirs);
-
-    LineInfoCollection::Iterator itOurs = ours.Begin();
-    LineInfoCollection::Iterator itTheirs = theirs.Begin();
-
-    for (int i = CHESS_LENGTH - 1; i > 0; --i)
+    virtual ~IPolicy()
     {
-        XL_LOG_INFO(L"Find our %d-line", i);
-        Point pt = FindNextMove(itOurs, ours.End(), i);
 
-        if (pt != INVALID_POSITION)
+    }
+
+    virtual Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// 简单 AI，尽量连自己或者堵对方
+
+class PolicySimpleAI : public IPolicy
+{
+public:
+    Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
+    {
+        XL_LOG_INFO_FUNCTION();
+
+        LineInfoCollection ours, theirs;
+        Valuation::FindLine(data, 1, currentTurn, true, true, &ours);
+        Valuation::FindLine(data, 1, !currentTurn, true, true, &theirs);
+
+        LineInfoCollection::Iterator itOurs = ours.Begin();
+        LineInfoCollection::Iterator itTheirs = theirs.Begin();
+
+        for (int i = CHESS_LENGTH - 1; i > 0; --i)
+        {
+            // 如果自己有 i 子，那么连自己
+
+            XL_LOG_INFO(L"Find our %d-line", i);
+            Point pt = FindNextMove(itOurs, ours.End(), i);
+
+            if (pt != INVALID_POSITION)
+            {
+                return pt;
+            }
+
+            // 如果对方有 i 子，那么堵对方
+
+            XL_LOG_INFO(L"Find their %d-line", i);
+            pt = FindNextMove(itTheirs, theirs.End(), i);
+
+            if (pt != INVALID_POSITION)
+            {
+                return pt;
+            }
+        }
+
+        return INVALID_POSITION;
+    }
+
+private:
+    Point FindNextMove(LineInfoCollection::Iterator &it, LineInfoCollection::Iterator &itEnd, int nMinCount)
+    {
+        while (it != itEnd)
+        {
+            if (it->Count < nMinCount)
+            {
+                break;
+            }
+            if (it->Blank.HolePos > 0)
+            {
+                LOG_LINE(*it);
+                return it->Position + DirectionDef[it->Direction] * it->Blank.HolePos;
+            }
+            if (it->Blank.HeadRemain > 0 && it->Blank.HeadRemain >= it->Blank.TailRemain)
+            {
+                LOG_LINE(*it);
+                return it->Position - DirectionDef[it->Direction];
+            }
+            if (it->Blank.TailRemain > 0 && it->Blank.TailRemain > it->Blank.HeadRemain)
+            {
+                LOG_LINE(*it);
+                return it->Position + DirectionDef[it->Direction] * (it->Count + (it->Blank.HolePos > 0 ? 1 : 0));
+            }
+            if (it->Blank.HeadRemain > 0 && it->Blank.TailRemain)
+            {
+                LOG_LINE(*it);
+                return it->Position - DirectionDef[it->Direction];
+            }
+
+            ++it;
+        }
+
+        return INVALID_POSITION;
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// 完全随机
+
+class PolicyRandom : public IPolicy
+{
+public:
+    PolicyRandom(int nMaxTryTime = 100) : m_nMaxTryTime(nMaxTryTime)
+    {
+        srand((unsigned int)time(nullptr));
+    }
+
+    Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
+    {
+        Point pt;
+
+        for (int i = 0; i < m_nMaxTryTime; ++i)
+        {
+            pt.x = rand() % CHESSBOARD_SIZE;
+            pt.y = rand() % CHESSBOARD_SIZE;
+
+            if (data[pt.x][pt.y] == ChessmanColor_None)
+            {
+                return pt;
+            }
+        }
+
+        return INVALID_POSITION;
+    }
+
+private:
+    int m_nMaxTryTime;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// 尽量靠近中心点下
+
+class PolicyCenter : public IPolicy
+{
+    Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
+    {
+        Point pt(CHESSBOARD_SIZE / 2, CHESSBOARD_SIZE / 2);
+
+        if (data[pt.x][pt.y] == ChessmanColor_None)
         {
             return pt;
         }
 
-        XL_LOG_INFO(L"Find their %d-line", i);
-        pt = FindNextMove(itTheirs, theirs.End(), i);
-
-        if (pt != INVALID_POSITION)
+        for (int i = 1; i < CHESSBOARD_SIZE / 2; ++i)
         {
-            return pt;
+            Point delta[] =
+            {
+                {  i, -i },
+                { -i, -i },
+                { -i,  i },
+                {  i,  i },
+                { -i,  0 },
+                {  0, -i },
+                {  i,  0 },
+                {  0,  i },
+            };
+
+            for (int j = 0; j < _countof(delta); ++j)
+            {
+                Point ptDelta = pt + delta[j];
+
+                if (data[ptDelta.x][ptDelta.y] == ChessmanColor_None)
+                {
+                    return pt;
+                }
+            }
         }
+
+        return INVALID_POSITION;
     }
+};
+////////////////////////////////////////////////////////////////////////////////
 
-    return INVALID_POSITION;
-}
-
-Point Policy::FindNextMove(LineInfoCollection::Iterator &it, LineInfoCollection::Iterator &itEnd, int nMinCount)
+Point Policy::FindNextMove(PolicyName policy, const ChessData &data, ChessmanColor currentTurn)
 {
-    while (it != itEnd)
+    static IPolicy *policies[Policy_Count] =
     {
-        if (it->Count < nMinCount)
-        {
-            break;
-        }
-        if (it->Blank.HolePos > 0)
-        {
-            LOG_LINE(*it);
-            return it->Position + DirectionDef[it->Direction] * it->Blank.HolePos;
-        }
-        if (it->Blank.HeadRemain > 0 && it->Blank.HeadRemain >= it->Blank.TailRemain)
-        {
-            LOG_LINE(*it);
-            return it->Position - DirectionDef[it->Direction];
-        }
-        if (it->Blank.TailRemain > 0 && it->Blank.TailRemain > it->Blank.HeadRemain)
-        {
-            LOG_LINE(*it);
-            return it->Position + DirectionDef[it->Direction] * (it->Count + (it->Blank.HolePos > 0 ? 1 : 0));
-        }
-        if (it->Blank.HeadRemain > 0 && it->Blank.TailRemain)
-        {
-            LOG_LINE(*it);
-            return it->Position - DirectionDef[it->Direction];
-        }
+        /* Policy_SimpleAI  => */ new PolicySimpleAI,
+        /* Policy_Random    => */ new PolicyRandom,
+        /* Policy_Center    => */ new PolicyCenter,
+    };
 
-        ++it;
-    }
-
-    return INVALID_POSITION;
+    return policies[policy]->FindNextMove(data, currentTurn);
 }
-

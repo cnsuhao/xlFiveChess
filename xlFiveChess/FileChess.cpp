@@ -14,7 +14,6 @@
 #include "Valuation.h"
 #include "Policy.h"
 #include <memory>
-#include <time.h>
 
 FiveChess::FiveChess() : m_CurrentTurn(ChessmanColor_None), m_Winner(ChessmanColor_None)
 {
@@ -82,7 +81,6 @@ void FiveChess::NewGame(ChessmanColor colorFirst)
     Clear();
     m_CurrentTurn = colorFirst;
     m_Winner = ChessmanColor_None;
-    srand((unsigned int)time(NULL));
 }
 
 bool FiveChess::Move(int x, int y, ChessmanColor color)
@@ -104,33 +102,21 @@ bool FiveChess::Move(int x, int y, ChessmanColor color)
 
 bool FiveChess::AutoMove(ChessmanColor color)
 {
-    if (m_CurrentTurn == ChessmanColor_None || m_CurrentTurn != color)
+    if (m_CurrentTurn == ChessmanColor_None || m_CurrentTurn != color || IsGameOver())
     {
         return false;
     }
 
-    Point pt = Policy::FindNextMove(m_ChessData, color);
+    Point pt = INVALID_POSITION;
 
-    if (pt == INVALID_POSITION)
+    if (m_ChessHistory.Empty())
     {
-        if (m_ChessHistory.Empty())
-        {
-            pt.x = CHESSBOARD_SIZE / 2;
-            pt.y = CHESSBOARD_SIZE / 2;
-        }
-        else
-        {
-            while (true)
-            {
-                pt.x = rand() % CHESSBOARD_SIZE;
-                pt.y = rand() % CHESSBOARD_SIZE;
+        pt = Policy::FindNextMove(Policy_Center, m_ChessData, color);
+    }
 
-                if (m_ChessData[pt.x][pt.y] == ChessmanColor_None)
-                {
-                    break;
-                }
-            }
-        }
+    for (int i = 0; i < Policy_Count && pt == INVALID_POSITION; ++i)
+    {
+        pt = Policy::FindNextMove((PolicyName)i, m_ChessData, color);
     }
 
     ForceMove(pt.x, pt.y, color);
