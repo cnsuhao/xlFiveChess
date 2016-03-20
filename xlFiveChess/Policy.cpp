@@ -41,18 +41,6 @@ struct IPolicy
 
 class PolicyForecastAI : public IPolicy
 {
-private:
-    struct Score
-    {
-        double OurScore;
-        double TheirScore;
-
-        Score() : OurScore(0), TheirScore(0)
-        {
-
-        }
-    };
-
 public:
     Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
     {
@@ -260,10 +248,10 @@ Point Policy::FindNextMove(PolicyName policy, const ChessData &data, ChessmanCol
 {
     static IPolicy *policies[Policy_Count] =
     {
-        /* Policy_DorecastAI => */ new PolicyForecastAI,
-        /* Policy_SimpleAI   => */ new PolicySimpleAI,
-        /* Policy_Random     => */ new PolicyRandom,
-        /* Policy_Center     => */ new PolicyCenter,
+        /* Policy_DorecastAI          => */ new PolicyForecastAI,
+        /* Policy_SimpleAI            => */ new PolicySimpleAI,
+        /* Policy_Random              => */ new PolicyRandom,
+        /* Policy_Center              => */ new PolicyCenter,
     };
 
     return policies[policy]->FindNextMove(data, currentTurn);
