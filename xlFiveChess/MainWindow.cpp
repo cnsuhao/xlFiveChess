@@ -51,15 +51,15 @@ bool MainWindow::Create(int nWidth, int nHeight)
 {
 
     m_MenuGame.CreatePopup();
-    m_MenuGame.AppendMenu(MF_POPUP | MF_STRING, MENU_ID_NEW_GAME, L"新游戏(&N)");
-    m_MenuGame.AppendMenu(MF_POPUP | MF_STRING, MENU_ID_UNDO, L"悔棋(&U)");
-    m_MenuGame.AppendMenu(MF_POPUP | MF_SEPARATOR, 0, nullptr);
-    m_MenuGame.AppendMenu(MF_POPUP | MF_STRING, MENU_ID_QUIT, L"退出(&Q)");
+    m_MenuGame.AppendMenu(MF_STRING, MENU_ID_NEW_GAME, L"新游戏(&N)");
+    m_MenuGame.AppendMenu(MF_STRING, MENU_ID_UNDO, L"悔棋(&U)");
+    m_MenuGame.AppendMenu(MF_SEPARATOR, 0, nullptr);
+    m_MenuGame.AppendMenu(MF_STRING, MENU_ID_QUIT, L"退出(&Q)");
 
     m_MenuRule.CreatePopup();
-    m_MenuRule.AppendMenu(MF_POPUP | MF_STRING | MF_UNCHECKED | MF_GRAYED, MENU_ID_FORBIDDEN, L"禁手(&F)");
-    m_MenuRule.AppendMenu(MF_POPUP | MF_STRING | MF_UNCHECKED | MF_GRAYED, MENU_ID_EXCHANGE, L"三手交换(&E)");
-    m_MenuRule.AppendMenu(MF_POPUP | MF_STRING | MF_UNCHECKED | MF_GRAYED, MENU_ID_DOUBLE_MOVE, L"五手两打(&D)");
+    m_MenuRule.AppendMenu(MF_STRING | MF_UNCHECKED | MF_GRAYED, MENU_ID_FORBIDDEN, L"禁手(&F)");
+    m_MenuRule.AppendMenu(MF_STRING | MF_UNCHECKED | MF_GRAYED, MENU_ID_EXCHANGE, L"三手交换(&E)");
+    m_MenuRule.AppendMenu(MF_STRING | MF_UNCHECKED | MF_GRAYED, MENU_ID_DOUBLE_MOVE, L"五手两打(&D)");
 
     m_MenuBar.Create();
     m_MenuBar.AppendMenu(MF_POPUP, (UINT_PTR)(HMENU)m_MenuGame, L"游戏(&G)");

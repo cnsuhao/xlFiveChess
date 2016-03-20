@@ -57,6 +57,26 @@ const FiveChessAction &FiveChess::GetLastAction() const
     return dummy;
 }
 
+LineInfoCollection FiveChess::GetPreWinLines(ChessmanColor color) const
+{
+    LineInfoCollection ret;
+    Valuation::FindLine(m_ChessData, CHESS_LENGTH - 2, color, true, true, &ret);
+
+    for (LineInfoCollection::Iterator it = ret.Begin(); it != ret.End(); )
+    {
+        if (it->Count < CHESS_LENGTH - 1 && (it->Blank.HeadRemain <= 0 || it->Blank.TailRemain <= 0))
+        {
+            it = ret.Delete(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    return ret;
+}
+
 void FiveChess::NewGame(ChessmanColor colorFirst)
 {
     Clear();

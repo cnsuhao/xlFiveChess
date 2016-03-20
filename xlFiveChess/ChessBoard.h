@@ -30,7 +30,8 @@ private:
     bool LogicalToPhysical(POINT &pt);
     bool PhysicalToLogical(POINT &pt);
     void DrawChessBoard(HDC hDC);
-    void DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bHiglight = false, bool bWeak = false);
+    void DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bWeak = false);
+    void DrawHint(HDC hDC, POINT pt, COLORREF color);
 
 private:
     LRESULT OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
