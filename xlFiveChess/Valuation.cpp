@@ -13,27 +13,47 @@
 #include "Valuation.h"
 #include <xl/Common/Meta/xlAssert.h>
 #include <xl/Common/Algorithm/xlSort.h>
+#include <math.h>
 
-
-int Valuation::EvalLine(const LineInfo &li)
+double Valuation::EvalLine(const LineInfo &li)
 {
-    int nScore = 0;
-    nScore += 10000 * li.Count;
-    nScore += 1000 * ((li.Blank.HeadRemain > 0 ? 1 : 0) + (li.Blank.TailRemain > 0 ? 1 : 0));
-    nScore += 100 * (li.Blank.HeadRemain + li.Blank.TailRemain);
-    nScore += 10 * (abs(DirectionDef[li.Direction].x) + abs(DirectionDef[li.Direction].y));
+    double nScore = 0;
+
+    nScore += pow(10000.0, li.Count);
+    nScore *= 100.0 * (li.Blank.HeadRemain > 0 ? 1 : 0) + (li.Blank.TailRemain > 0 ? 1 : 0) - (li.Blank.HolePos > 0 ? 1 : 0) / 2.0;
+    nScore *= 10 * (li.Blank.HeadRemain + li.Blank.TailRemain);
+    nScore *= 10 * (abs(DirectionDef[li.Direction].x) + abs(DirectionDef[li.Direction].y));
+
     return nScore;
 }
 
-bool Valuation::LineComparor(const LineInfo &lhs, const LineInfo &rhs)
+double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval, double *pOppositeScore)
 {
-    return Valuation::EvalLine(lhs) > Valuation::EvalLine(rhs);
+    LineInfoCollection lic;
+    Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &lic);
+
+    double nScore[] =
+    {
+        /* ChessmanColor_None  => */ 0.0,
+        /* ChessmanColor_Black => */ 0.0,
+        /* ChessmanColor_White => */ 0.0,
+    };
+
+    for (LineInfoCollection::Iterator it = lic.Begin(); it != lic.End(); ++it)
+    {
+        nScore[it->Color] += EvalLine(*it);
+    }
+
+    if (pOppositeScore != nullptr)
+    {
+        *pOppositeScore = nScore[!colorToEval];
+    }
+
+    return nScore[colorToEval];
 }
 
 ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanColor colorToFind, bool bFindAll, bool bAllowHole, LineInfoCollection *pResult)
 {
-    XL_LOG_INFO_FUNCTION();
-
     ChessmanColor colorFound = ChessmanColor_None;
 
     for (int i = 0; i < CHESSBOARD_SIZE; ++i)
@@ -45,7 +65,7 @@ ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanCol
                 continue;
             }
 
-            for (int k = 0; k < _countof(DirectionDef); ++k)
+            for (int k = 0; k < Direction_Count; ++k)
             {
                 if (i + DirectionDef[k].x * (nCount - 1) >= CHESSBOARD_SIZE ||
                     i + DirectionDef[k].x * (nCount - 1) < 0 ||
@@ -177,18 +197,11 @@ ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanCol
 
     if (pResult != nullptr && pResult->Size() > 1)
     {
-        xl::Sort::QuickSort(&(*pResult)[0], pResult->Size(), xl::Function<bool(const LineInfo &, const LineInfo &)>(Valuation::LineComparor));
-    }
-
-#ifdef _DEBUG
-    if (pResult != nullptr)
-    {
-        for (LineInfoCollection::Iterator it = pResult->Begin(); it != pResult->End(); ++it)
+        xl::Sort::QuickSort(&(*pResult)[0], pResult->Size(), xl::Function<bool(const LineInfo &, const LineInfo &)>([](const LineInfo &lhs, const LineInfo &rhs)
         {
-            LOG_LINE(*it);
-        }
+            return Valuation::EvalLine(lhs) > Valuation::EvalLine(rhs);
+        }));
     }
-#endif
 
     return colorFound;
 }

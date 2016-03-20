@@ -13,6 +13,16 @@
 #include "Policy.h"
 #include "Valuation.h"
 #include <time.h>
+#include "Log.h"
+
+#define LOG_LINE(li)                                                                \
+    XL_LOG_INFO(L"%d-line, %s%s, %s, L%dR%dM%d, %d",                                \
+                (li).Count,                                                         \
+                COORD_TAG_HORZ[(li).Position.x], COORD_TAG_VERT[(li).Position.y],   \
+                DIRECTION_TAG[(li).Direction],                                      \
+                (li).Blank.HeadRemain, (li).Blank.TailRemain, (li).Blank.HolePos,   \
+                Valuation::EvalLine((li)))
+
 
 
 struct IPolicy
@@ -23,6 +33,78 @@ struct IPolicy
     }
 
     virtual Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// AI，预测一步
+
+class PolicyForecastAI : public IPolicy
+{
+private:
+    struct Score
+    {
+        double OurScore;
+        double TheirScore;
+
+        Score() : OurScore(0), TheirScore(0)
+        {
+
+        }
+    };
+
+public:
+    Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
+    {
+        XL_LOG_INFO_FUNCTION();
+
+        ChessData d = data;
+
+        Score currentScore;
+        currentScore.OurScore = Valuation::EvalChessboard(d, currentTurn, &currentScore.TheirScore);
+        XL_LOG_INFO(L"Currenr score: %lf,%lf", currentScore.OurScore, currentScore.TheirScore);
+
+        Point ptOurs = INVALID_POSITION;    // 我方最佳点
+        double dOurDeltaMax = 0.0;          // 我方下在最佳点后的对我方局面评分的提高数
+        Point ptTheirs = INVALID_POSITION;  // 对方最佳点
+        double dTheirDeltaMax = 0.0;        // 对方下在最佳点后的对对方局面评分的提高数
+
+        for (int i = 0; i < CHESSBOARD_SIZE; ++i)
+        {
+            for (int j = 0; j < CHESSBOARD_SIZE; ++j)
+            {
+                if (data[i][j] == ChessmanColor_None)
+                {
+                    d[i][j] = currentTurn;
+                    Score o;
+                    o.OurScore = Valuation::EvalChessboard(d, currentTurn, &o.TheirScore);
+                    d[i][j] = !currentTurn;
+                    Score t;
+                    t.OurScore = Valuation::EvalChessboard(d, currentTurn, &t.TheirScore);
+                    d[i][j] = ChessmanColor_None;
+                    XL_LOG_INFO(L"Pos:%s%s, OurMove: %lf,%lf, TheirMove: %lf,%lf", COORD_TAG_HORZ[i], COORD_TAG_VERT[j], o.OurScore, o.TheirScore, t.OurScore, t.TheirScore);
+
+                    double nOurDelta = (o.OurScore - o.TheirScore) - (currentScore.OurScore - currentScore.TheirScore);
+                    double nTheirDelta = (t.TheirScore - t.OurScore) - (currentScore.TheirScore - currentScore.OurScore);
+
+                    if (nOurDelta > dOurDeltaMax)
+                    {
+                        dOurDeltaMax = nOurDelta;
+                        ptOurs = Point(i, j);
+                    }
+
+                    if (nTheirDelta > dTheirDeltaMax)
+                    {
+                        dTheirDeltaMax = nTheirDelta;
+                        ptTheirs = Point(i, j);
+                    }
+                }
+            }
+        }
+
+        XL_LOG_INFO(L"Pos:%s%s, OurDeltaMax:%lf", COORD_TAG_HORZ[ptOurs.x], COORD_TAG_VERT[ptOurs.y], dOurDeltaMax);
+        XL_LOG_INFO(L"Pos:%s%s, TheirDeltaMax:%lf", COORD_TAG_HORZ[ptTheirs.x], COORD_TAG_VERT[ptTheirs.y], dTheirDeltaMax);
+        return dOurDeltaMax >= dTheirDeltaMax ? ptOurs : ptTheirs;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,9 +268,10 @@ Point Policy::FindNextMove(PolicyName policy, const ChessData &data, ChessmanCol
 {
     static IPolicy *policies[Policy_Count] =
     {
-        /* Policy_SimpleAI  => */ new PolicySimpleAI,
-        /* Policy_Random    => */ new PolicyRandom,
-        /* Policy_Center    => */ new PolicyCenter,
+        /* Policy_DorecastAI => */ new PolicyForecastAI,
+        /* Policy_SimpleAI   => */ new PolicySimpleAI,
+        /* Policy_Random     => */ new PolicyRandom,
+        /* Policy_Center     => */ new PolicyCenter,
     };
 
     return policies[policy]->FindNextMove(data, currentTurn);

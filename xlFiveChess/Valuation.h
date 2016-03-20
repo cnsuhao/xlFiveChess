@@ -17,8 +17,8 @@
 
 namespace Valuation
 {
-    int EvalLine(const LineInfo &li);
-    bool LineComparor(const LineInfo &lhs, const LineInfo &rhs);
+    double EvalLine(const LineInfo &li);
+    double EvalChessboard(const ChessData &data, ChessmanColor colorToEval, double *pOppositeScore);
     ChessmanColor FindLine(const ChessData &data, int nCount, ChessmanColor colorToFind = ChessmanColor_None, bool bFindAll = false, bool bAllowHole = false, LineInfoCollection *pResult = nullptr);
 }
 

@@ -40,8 +40,37 @@ inline ChessmanColor operator ! (ChessmanColor color)
     return colorMap[color];
 }
 
-typedef ChessmanColor ChessData[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
-typedef double ChessboardValue[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
+class ChessData
+{
+public:
+    inline ChessData()
+    {
+        Clear();
+    }
+
+    inline void Clear()
+    {
+        memset(m_data, ChessmanColor_None, sizeof(m_data));
+    }
+
+    inline ChessData &operator =(const ChessData &that)
+    {
+        memcpy(this->m_data, that.m_data, sizeof(m_data));
+    }
+
+    inline ChessmanColor *operator [](int i)
+    {
+        return m_data[i];
+    }
+
+    inline const ChessmanColor *operator [](int i) const
+    {
+        return m_data[i];
+    }
+
+private:
+    ChessmanColor m_data[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
+};
 
 struct Point
 {
@@ -117,16 +146,5 @@ inline bool operator != (const Point &lhs, const Point &rhs)
 {
     return lhs.x != rhs.x || lhs.y != rhs.y;
 }
-
-
-#include "Log.h"
-
-#define LOG_LINE(li)                                                                \
-    XL_LOG_INFO(L"%d-line, %s%s, %s, L%dR%dM%d, %d",                                \
-                (li).Count,                                                         \
-                COORD_TAG_HORZ[(li).Position.x], COORD_TAG_VERT[(li).Position.y],   \
-                DIRECTION_TAG[(li).Direction],                                      \
-                (li).Blank.HeadRemain, (li).Blank.TailRemain, (li).Blank.HolePos,   \
-                Valuation::EvalLine((li)))
 
 #endif // #ifndef __FIVEMODEL_H_1FE257EC_AAA2_43D3_B918_BF9AE7FAE21B_INCLUDED__

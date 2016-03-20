@@ -18,6 +18,7 @@
 // 策略定义，越在上面的越优先
 enum PolicyName
 {
+    Policy_ForecastAI,
     Policy_SimpleAI,
     Policy_Random,
     Policy_Center,

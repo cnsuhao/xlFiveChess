@@ -58,14 +58,14 @@ const FiveChessAction &FiveChess::GetLastAction() const
 
 LineInfoCollection FiveChess::GetPreWinLines(ChessmanColor color) const
 {
-    LineInfoCollection ret;
-    Valuation::FindLine(m_ChessData, CHESS_LENGTH - 2, color, true, true, &ret);
+    LineInfoCollection lic;
+    Valuation::FindLine(m_ChessData, CHESS_LENGTH - 2, color, true, true, &lic);
 
-    for (LineInfoCollection::Iterator it = ret.Begin(); it != ret.End(); )
+    for (LineInfoCollection::Iterator it = lic.Begin(); it != lic.End(); )
     {
         if (it->Count < CHESS_LENGTH - 1 && (it->Blank.HeadRemain <= 0 || it->Blank.TailRemain <= 0))
         {
-            it = ret.Delete(it);
+            it = lic.Delete(it);
         }
         else
         {
@@ -73,7 +73,7 @@ LineInfoCollection FiveChess::GetPreWinLines(ChessmanColor color) const
         }
     }
 
-    return ret;
+    return lic;
 }
 
 void FiveChess::NewGame(ChessmanColor colorFirst)
@@ -168,6 +168,6 @@ bool FiveChess::CheckGameOver()
 
 void FiveChess::Clear()
 {
-    memset(&m_ChessData, 0, sizeof(m_ChessData));
+    m_ChessData.Clear();
     m_ChessHistory.Clear();
 }
