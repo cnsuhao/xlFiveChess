@@ -126,6 +126,7 @@ bool FiveChess::Undo(size_t nSteps)
     }
 
     m_Winner = ChessmanColor_None;
+    UpdatePreWinLines();
 
     return true;
 }
