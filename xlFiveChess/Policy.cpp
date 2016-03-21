@@ -12,18 +12,10 @@
 
 #include "Policy.h"
 #include "Valuation.h"
+#include <Windows.h>
 #include <time.h>
 #include <float.h>
-#include "Log.h"
-
-#define LOG_LINE(li)                                                                \
-    XL_LOG_INFO(L"%d-line, %s%s, %s, L%dR%dM%d, %d",                                \
-                (li).Count,                                                         \
-                COORD_TAG_HORZ[(li).Position.x], COORD_TAG_VERT[(li).Position.y],   \
-                DIRECTION_TAG[(li).Direction],                                      \
-                (li).Blank.HeadRemain, (li).Blank.TailRemain, (li).Blank.HolePos,   \
-                Valuation::EvalLine((li)))
-
+#include <stdlib.h>
 
 
 struct IPolicy
@@ -34,7 +26,15 @@ struct IPolicy
     }
 
     virtual Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) = 0;
+
 };
+
+#ifdef DRAW_DEBUG_INFO
+
+static LineInfoCollection g_LastLineInfoCollection;
+static ChessboardValue g_LastChessboardValue;
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // AI，预测一步
@@ -44,14 +44,30 @@ class PolicyForecastAI : public IPolicy
 public:
     Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
     {
-        XL_LOG_INFO_FUNCTION();
+#ifdef DRAW_DEBUG_INFO
+        Policy::ClearLastChessboardValues();
+        Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &g_LastLineInfoCollection);
+#endif
+        static ChessboardValue nBaseValue = {};
+        Point ptCenter(CHESSBOARD_SIZE / 2, CHESSBOARD_SIZE / 2);
+
+        if (nBaseValue[ptCenter.x][ptCenter.y] == 0)
+        {
+            for (int i = 0; i < CHESSBOARD_SIZE; ++i)
+            {
+                for (int j = 0; j < CHESSBOARD_SIZE; ++j)
+                {
+                    nBaseValue[i][j] = max(ptCenter.x, ptCenter.y) - max(abs(i - ptCenter.x), abs(j - ptCenter.y));
+                }
+            }
+        }
 
         ChessData &d = (ChessData &)data;
+        double dCurrentOppositeValue = 0;
+        double dCurrentValue = Valuation::EvalChessboard(d, currentTurn, &dCurrentOppositeValue);
 
-        Point ptOurs = INVALID_POSITION;    // 我方最佳点
-        double dOurScoreMax = -DBL_MAX;     // 我方下在最佳点后的我方局面评分
-        Point ptTheirs = INVALID_POSITION;  // 对方最佳点
-        double dTheirScoreMax = -DBL_MAX;   // 对方下在最佳点后的对方局面评分
+        Point pt = INVALID_POSITION;    // 最佳点
+        double dValueMax = -DBL_MAX;     // 下在最佳点后的局面评分
 
         for (int i = 0; i < CHESSBOARD_SIZE; ++i)
         {
@@ -59,31 +75,38 @@ public:
             {
                 if (data[i][j] == ChessmanColor_None)
                 {
-                    d[i][j] = currentTurn;
-                    double dOurScore = Valuation::EvalChessboard(d, currentTurn);
-                    d[i][j] = !currentTurn;
-                    double dTheirScore = -Valuation::EvalChessboard(d, currentTurn);
-                    d[i][j] = ChessmanColor_None;
-                    XL_LOG_INFO(L"Pos:%s%s, OurMove: %lf, TheirMove: %lf", COORD_TAG_HORZ[i], COORD_TAG_VERT[j], dOurScore, dTheirScore);
-
-                    if (dOurScore > dOurScoreMax)
+                    double dValueOfPoint = 0;
+                    // 我方下在 [i][j] 点时，我方增加的局面分和对方减少的局面分
                     {
-                        dOurScoreMax = dOurScore;
-                        ptOurs = Point(i, j);
+                        d[i][j] = currentTurn;
+                        double dOppositeValue;
+                        double dValue =  Valuation::EvalChessboard(d, currentTurn, &dOppositeValue);
+                        dValueOfPoint += (dValue - dCurrentValue) + (dCurrentOppositeValue - dOppositeValue);
+                    }
+                    // 对方下在 [i][j] 点时，对方增加的局面分和我方减少的局面分
+                    {
+                        d[i][j] = !currentTurn;
+                        double dOppositeValue;
+                        double dValue = Valuation::EvalChessboard(d, currentTurn, &dOppositeValue);
+                        dValueOfPoint += (dOppositeValue - dCurrentOppositeValue) + (dCurrentValue - dValue);
                     }
 
-                    if (dTheirScore > dTheirScoreMax)
+                    dValueOfPoint += nBaseValue[i][j];
+#ifdef DRAW_DEBUG_INFO
+                    g_LastChessboardValue[i][j] = dValueOfPoint;
+#endif
+                    d[i][j] = ChessmanColor_None;
+
+                    if (dValueOfPoint > dValueMax)
                     {
-                        dTheirScoreMax = dTheirScore;
-                        ptTheirs = Point(i, j);
+                        dValueMax = dValueOfPoint;
+                        pt = Point(i, j);
                     }
                 }
             }
         }
 
-        XL_LOG_INFO(L"Pos:%s%s, OurScoreMax:%lf", COORD_TAG_HORZ[ptOurs.x], COORD_TAG_VERT[ptOurs.y], dOurScoreMax);
-        XL_LOG_INFO(L"Pos:%s%s, TheirScoreMax:%lf", COORD_TAG_HORZ[ptTheirs.x], COORD_TAG_VERT[ptTheirs.y], dTheirScoreMax);
-        return dOurScoreMax >= dTheirScoreMax ? ptOurs : ptTheirs;
+        return pt;
     }
 };
 
@@ -95,11 +118,15 @@ class PolicySimpleAI : public IPolicy
 public:
     Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
     {
-        XL_LOG_INFO_FUNCTION();
-
         LineInfoCollection ours, theirs;
         Valuation::FindLine(data, 1, currentTurn, true, true, &ours);
         Valuation::FindLine(data, 1, !currentTurn, true, true, &theirs);
+
+#ifdef DRAW_DEBUG_INFO
+        Policy::ClearLastChessboardValues();
+        g_LastLineInfoCollection.Insert(g_LastLineInfoCollection.End(), ours.Begin(), ours.End());
+        g_LastLineInfoCollection.Insert(g_LastLineInfoCollection.End(), theirs.Begin(), theirs.End());
+#endif
 
         LineInfoCollection::Iterator itOurs = ours.Begin();
         LineInfoCollection::Iterator itTheirs = theirs.Begin();
@@ -108,7 +135,6 @@ public:
         {
             // 如果自己有 i 子，那么连自己
 
-            XL_LOG_INFO(L"Find our %d-line", i);
             Point pt = FindNextMove(itOurs, ours.End(), i);
 
             if (pt != INVALID_POSITION)
@@ -118,7 +144,6 @@ public:
 
             // 如果对方有 i 子，那么堵对方
 
-            XL_LOG_INFO(L"Find their %d-line", i);
             pt = FindNextMove(itTheirs, theirs.End(), i);
 
             if (pt != INVALID_POSITION)
@@ -141,22 +166,18 @@ private:
             }
             if (it->Blank.HolePos > 0)
             {
-                LOG_LINE(*it);
                 return it->Position + DirectionDef[it->Direction] * it->Blank.HolePos;
             }
             if (it->Blank.HeadRemain > 0 && it->Blank.HeadRemain >= it->Blank.TailRemain)
             {
-                LOG_LINE(*it);
                 return it->Position - DirectionDef[it->Direction];
             }
             if (it->Blank.TailRemain > 0 && it->Blank.TailRemain > it->Blank.HeadRemain)
             {
-                LOG_LINE(*it);
                 return it->Position + DirectionDef[it->Direction] * (it->Count + (it->Blank.HolePos > 0 ? 1 : 0));
             }
             if (it->Blank.HeadRemain > 0 && it->Blank.TailRemain)
             {
-                LOG_LINE(*it);
                 return it->Position - DirectionDef[it->Direction];
             }
 
@@ -244,15 +265,39 @@ class PolicyCenter : public IPolicy
 };
 ////////////////////////////////////////////////////////////////////////////////
 
+static IPolicy *g_Policies[Policy_Count] =
+{
+    /* Policy_DorecastAI          => */ new PolicyForecastAI,
+    /* Policy_SimpleAI            => */ new PolicySimpleAI,
+    /* Policy_Random              => */ new PolicyRandom,
+    /* Policy_Center              => */ new PolicyCenter,
+};
+
 Point Policy::FindNextMove(PolicyName policy, const ChessData &data, ChessmanColor currentTurn)
 {
-    static IPolicy *policies[Policy_Count] =
-    {
-        /* Policy_DorecastAI          => */ new PolicyForecastAI,
-        /* Policy_SimpleAI            => */ new PolicySimpleAI,
-        /* Policy_Random              => */ new PolicyRandom,
-        /* Policy_Center              => */ new PolicyCenter,
-    };
-
-    return policies[policy]->FindNextMove(data, currentTurn);
+    return g_Policies[policy]->FindNextMove(data, currentTurn);
 }
+
+#ifdef DRAW_DEBUG_INFO
+
+const LineInfoCollection &Policy::GetLastLineInfoCollection()
+{
+    return g_LastLineInfoCollection;
+}
+
+const ChessboardValue &Policy::GetLastChessboardValues()
+{
+    return g_LastChessboardValue;
+}
+
+void Policy::ClearLastLineInfoCollection()
+{
+    g_LastLineInfoCollection.Clear();
+}
+
+void Policy::ClearLastChessboardValues()
+{
+    memset(g_LastChessboardValue, ChessmanColor_None, sizeof(g_LastChessboardValue));
+}
+
+#endif

@@ -13,9 +13,10 @@
 #include "ChessBoard.h"
 #include <xl/Windows/GUI/xlDPI.h>
 #include <windowsx.h>
+#include <stdio.h>
+#include "Valuation.h"
 
 #define COORD_FONT_SIZE 12
-#define WIN_FONT_SIZE   64
 
 ChessBoard::ChessBoard() : m_OperatorColor(ChessmanColor_None), m_nBlockSize(0), m_nLeftBlank(0), m_nTopBlank(0), m_hFont(NULL)
 {
@@ -34,11 +35,20 @@ ChessBoard::ChessBoard() : m_OperatorColor(ChessmanColor_None), m_nBlockSize(0),
     m_ptPreMove.y = -1;
 
     m_hFont = CreateFont(XL_DPI_Y(-COORD_FONT_SIZE), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Î¢ÈíÑÅºÚ");
-    m_hFontBig = CreateFont(XL_DPI_Y(-WIN_FONT_SIZE), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Î¢ÈíÑÅºÚ");
+    m_hFontBig = CreateFont(XL_DPI_Y(-64), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Î¢ÈíÑÅºÚ");
+
+#ifdef DRAW_DEBUG_INFO
+    m_hFontDebug = CreateFont(XL_DPI_Y(-8), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Î¢ÈíÑÅºÚ");
+    m_hPenDebug = CreatePen(PS_SOLID, 1, RGB(0xff, 0x00, 0x00));
+#endif
 }
 
 ChessBoard::~ChessBoard()
 {
+#ifdef DRAW_DEBUG_INFO
+    DeleteObject(m_hPenDebug);
+    DeleteObject(m_hFont);
+#endif
     DeleteObject(m_hFontBig);
     DeleteObject(m_hFont);
 }
@@ -52,6 +62,11 @@ void ChessBoard::NewGame()
     {
         m_FiveChess.AutoMove(ChessmanColor_Black);
     }
+
+#ifdef DRAW_DEBUG_INFO
+    Policy::ClearLastChessboardValues();
+    Policy::ClearLastLineInfoCollection();
+#endif
 
     Invalidate();
 }
@@ -105,6 +120,9 @@ bool ChessBoard::PhysicalToLogical(POINT &pt)
 
 void ChessBoard::DrawChessBoard(HDC hDC)
 {
+    static const wchar_t * const COORD_TAG_HORZ[CHESSBOARD_SIZE] = { L"A", L"B", L"C", L"D", L"E", L"F", L"G", L"H", L"I", L"J", L"K", L"L", L"M", L"N", L"O" };
+    static const wchar_t * const COORD_TAG_VERT[CHESSBOARD_SIZE] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11", L"12", L"13", L"14", L"15" };
+
     HPEN hPen = (HPEN)GetStockObject(BLACK_PEN);
     HPEN hOldPen = SelectPen(hDC, hPen);
     HFONT hOldFont = SelectFont(hDC, m_hFont);
@@ -171,6 +189,78 @@ void ChessBoard::DrawHint(HDC hDC, POINT pt, COLORREF color)
     ExtTextOut(hDC, 0, 0, ETO_OPAQUE, &rc, NULL, 0, NULL);
     SetBkColor(hDC, nOldBkColor);
 }
+
+#ifdef DRAW_DEBUG_INFO
+
+void ChessBoard::DrawDebugInfo(HDC hDC)
+{
+    HPEN hOldPen = SelectPen(hDC, m_hPenDebug);
+    HFONT hOldFont = SelectFont(hDC, m_hFontDebug);
+    int nOldBkMode = SetBkMode(hDC, TRANSPARENT);
+    COLORREF nOldTextColor = SetTextColor(hDC, RGB(0x00, 0x80, 0x00));
+    WCHAR szValue[64] = {};
+
+    // »­Ã¿¸ö¸ñ×ÓµÄ·ÖÖµ
+
+    const ChessboardValue &values = Policy::GetLastChessboardValues();
+    const ChessData &data = m_FiveChess.GetChessData();
+
+    for (int i = 0; i < CHESSBOARD_SIZE; ++i)
+    {
+        for (int j = 0; j < CHESSBOARD_SIZE; ++j)
+        {
+            POINT pt = { i, j };
+            LogicalToPhysical(pt);
+            RECT rc = { pt.x, pt.y, pt.x + m_nBlockSize, pt.y + m_nBlockSize };
+
+            swprintf_s(szValue, L"%-.2lf", values[i][j]);
+            DrawText(hDC, szValue, -1, &rc, DT_SINGLELINE | DT_LEFT | DT_TOP);
+        }
+    }
+
+    SetTextColor(hDC, RGB(0xff, 0x00, 0x00));
+    const LineInfoCollection &lic = Policy::GetLastLineInfoCollection();
+
+    for (LineInfoCollection::Iterator it = lic.Begin(); it != lic.End(); ++it)
+    {
+        if (it->Count < 2)
+        {
+            continue;
+        }
+
+        double dValue = Valuation::EvalLine(*it);
+
+        Point point1 = it->Position, point2 = it->Position + DirectionDef[it->Direction] * (it->Count - 1 + (it->Blank.HolePos > 0 ? 1 : 0));
+        POINT pt1 = { point1.x, point1.y }, pt2 = { point2.x, point2.y };
+
+        LogicalToPhysical(pt1);
+        LogicalToPhysical(pt2);
+
+        pt1.x -= DirectionDef[it->Direction].x * m_nBlockSize / 3;
+        pt1.y -= DirectionDef[it->Direction].y * m_nBlockSize / 3;
+        pt2.x += DirectionDef[it->Direction].x * m_nBlockSize / 3;
+        pt2.y += DirectionDef[it->Direction].y * m_nBlockSize / 3;
+
+        pt1.x += 1;
+        pt1.y += 1;
+        pt2.x += 1;
+        pt2.y += 1;
+
+        MoveToEx(hDC, (pt1.x), (pt1.y), NULL);
+        LineTo(hDC, (pt2.x), (pt2.y));
+        RECT rc = { pt2.x, pt2.y, pt2.x + m_nBlockSize, pt2.y + m_nBlockSize };
+
+        swprintf_s(szValue, L"%-.2lf", dValue);
+        DrawText(hDC, szValue, -1, &rc, DT_SINGLELINE | DT_LEFT | DT_TOP);
+    }
+
+    SetTextColor(hDC, nOldTextColor);
+    SetBkMode(hDC, nOldBkMode);
+    SelectFont(hDC, hOldFont);
+    SelectPen(hDC, hOldPen);
+}
+
+#endif
 
 LRESULT ChessBoard::OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
@@ -252,7 +342,7 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
     }
     else
     {
-        LineInfoCollection preWin = m_FiveChess.GetPreWinLines();
+        const LineInfoCollection &preWin = m_FiveChess.GetPreWinLines();
         COLORREF colors[] =
         {
             /* ChessmanColor_None  => */ RGB(0x00, 0x00, 0x00),
@@ -285,6 +375,10 @@ LRESULT ChessBoard::OnPaint(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
             }
         }
     }
+
+#ifdef DRAW_DEBUG_INFO
+    DrawDebugInfo(hDC);
+#endif
 
     BitBlt(ps.hdc, 0, 0, rc.right - rc.left, rc.bottom - rc.top, hDC, 0, 0, SRCCOPY);
 

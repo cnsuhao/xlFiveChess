@@ -32,6 +32,9 @@ private:
     void DrawChessBoard(HDC hDC);
     void DrawChessman(HDC hDC, POINT pt, bool bBlack, bool bWeak = false);
     void DrawHint(HDC hDC, POINT pt, COLORREF color);
+#ifdef DRAW_DEBUG_INFO
+    void DrawDebugInfo(HDC hDC);
+#endif
 
 private:
     LRESULT OnCreate(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
@@ -44,7 +47,7 @@ private:
 
 private:
     FiveChess m_FiveChess;
-    ChessmanColor m_OperatorColor;;
+    ChessmanColor m_OperatorColor;
 
     int m_nBlockSize;
     int m_nLeftBlank;
@@ -55,6 +58,10 @@ private:
 
     HFONT m_hFont;
     HFONT m_hFontBig;
+#ifdef DRAW_DEBUG_INFO
+    HFONT m_hFontDebug;
+    HPEN m_hPenDebug;
+#endif
 };
 
 

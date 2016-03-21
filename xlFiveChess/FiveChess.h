@@ -42,7 +42,7 @@ public:
     bool IsGameOver() const;
     ChessmanColor WhoWins() const;
     const FiveChessAction &GetLastAction() const;
-    LineInfoCollection GetPreWinLines(ChessmanColor color = ChessmanColor_None) const;
+    const LineInfoCollection &GetPreWinLines(ChessmanColor color = ChessmanColor_None) const;
 
 public:
     void NewGame(ChessmanColor colorFirst);
@@ -52,6 +52,7 @@ public:
 
 private:
     void ForceMove(int x, int y, ChessmanColor color);
+    void UpdatePreWinLines();
     bool CheckGameOver();
     void Clear();
 
@@ -60,6 +61,7 @@ private:
     ChessmanColor m_Winner;
     ChessData m_ChessData;
     FiveChessHistory m_ChessHistory;
+    LineInfoCollection m_PreWinLines;
 };
 
 #endif // #ifndef __FIVECHESS_H_DD3430E6_BC82_4E36_9D4F_99A5262E2B5B_INCLUDED__

@@ -16,24 +16,70 @@
 #include <math.h>
 #include "Log.h"
 
+
 double Valuation::EvalLine(const LineInfo &li)
 {
-    double dScore = 0;
+    // 棋型定义
+    enum Shader
+    {
+        Shader_Five,                // 五子
+        Shader_DoubleAliveFour,     // 活四
+        Shader_SingleAliveFour,     // 冲四
+        Shader_DoubleAliveThree,    // 活三
+        Shader_SingleAliveThree,    // 眠三
+        Shader_DoubleAliveTwo,      // 活二
+        Shader_SingleAliveTwo,      // 眠二
+        Shader_DoubleAliveOne,      // 活一
+        Shader_SingleAliveOne,      // 眠一
+        Shader_More,                // 如果定义的 CHESS_LENGTH 不是 5，下面不再列出棋型名称，只要把评分表补全即可
+    };
 
-    dScore += pow(10000.0, li.Count);
-    dScore *= 100 * ((li.Blank.HeadRemain > 0 ? 1 : 0) + (li.Blank.TailRemain > 0 ? 1 : 0) - (li.Blank.HolePos > 0 ? 1 : 0));
-    dScore *= 10 * (li.Blank.HeadRemain + li.Blank.TailRemain);
-    dScore *= 10 * (abs(DirectionDef[li.Direction].x) + abs(DirectionDef[li.Direction].y));
+    static const double VALUE_DEF[CHESS_LENGTH * 2 - 1] =
+    {
+                                      //   基本分  有跳格  走阳线  走阴线
+        /*Shader_Five,                */ { 1e8 },
+        /*Shader_DoubleAliveFour,     */ { 1e6 },
+        /*Shader_SingleAliveFour,     */ { 1e5 },
+        /*Shader_DoubleAliveThree,    */ { 1e5 },
+        /*Shader_SingleAliveThree,    */ { 200 },
+        /*Shader_DoubleAliveTwo,      */ { 300 },
+        /*Shader_SingleAliveTwo,      */ { 100 },
+        /*Shader_DoubleAliveOne,      */ { 50 },
+        /*Shader_SingleAliveOne,      */ { 10 },
+    };
 
-    return dScore;
+    Shader shader = Shader_More;
+
+    if (li.Count >= CHESS_LENGTH && (li.Blank.HolePos == 0 || li.Blank.HolePos >= CHESS_LENGTH))
+    {
+        shader = Shader_Five;
+    }
+    else
+    {
+        for (int i = 1; i < _countof(VALUE_DEF) - 1; i += 2)
+        {
+            if (li.Count >= CHESS_LENGTH - i && li.Blank.HeadRemain > 0 && li.Blank.TailRemain > 0 && li.Blank.HeadRemain + li.Blank.TailRemain > i + 1)
+            {
+                shader = (Shader)i;
+                break;
+            }
+            if (li.Count >= CHESS_LENGTH - i && li.Blank.HeadRemain + li.Blank.TailRemain > i)
+            {
+                shader = (Shader)(i + 1);
+                break;
+            }
+        }
+    }
+
+    return VALUE_DEF[shader];
 }
 
-double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval)
+double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval, double *pOppsiteValue)
 {
     LineInfoCollection lic;
     Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &lic);
 
-    double nScore[] =
+    double dValues[] =
     {
         /* ChessmanColor_None  => */ 0.0,
         /* ChessmanColor_Black => */ 0.0,
@@ -42,14 +88,24 @@ double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEva
 
     for (LineInfoCollection::Iterator it = lic.Begin(); it != lic.End(); ++it)
     {
-        nScore[it->Color] += EvalLine(*it);
+        dValues[it->Color] += EvalLine(*it);
     }
 
-    return nScore[colorToEval] - nScore[!colorToEval];
+    if (pOppsiteValue != nullptr)
+    {
+        *pOppsiteValue = dValues[!colorToEval];
+    }
+
+    return dValues[colorToEval];
 }
 
 ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanColor colorToFind, bool bFindAll, bool bAllowHole, LineInfoCollection *pResult)
 {
+    if (pResult != nullptr)
+    {
+        pResult->Clear();
+    }
+
     ChessmanColor colorFound = ChessmanColor_None;
 
     for (int i = 0; i < CHESSBOARD_SIZE; ++i)
@@ -166,6 +222,12 @@ ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanCol
                     }
                     else
                     {
+                        if (l == li.Blank.HolePos + 1)  // 上一个是空白，那么认为连子结束，上个空属于尾空
+                        {
+                            li.Blank.TailRemain = 1;
+                            li.Blank.HolePos = 0;
+                        }
+
                         break;
                     }
                 }

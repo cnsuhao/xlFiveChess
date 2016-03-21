@@ -13,7 +13,7 @@
 #define __LOG_H_6AD94564_D193_4DB3_8C90_A174D4853482_INCLUDED__
 
 
-#ifdef _DEBUG
+#ifdef DRAW_DEBUG_INFO
 #define XL_LOG_TARGET_DEBUGGER                          // Output to console
 #define XL_LOG_LEVEL_FATAL                              // Output log level fatal
 #define XL_LOG_LEVEL_ERROR                              // Output log level error

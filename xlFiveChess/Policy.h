@@ -26,9 +26,16 @@ enum PolicyName
     Policy_Count,
 };
 
+
 namespace Policy
 {
     Point FindNextMove(PolicyName policy, const ChessData &data, ChessmanColor currentTurn);
+#ifdef DRAW_DEBUG_INFO
+    const LineInfoCollection &GetLastLineInfoCollection();
+    const ChessboardValue &GetLastChessboardValues();
+    void ClearLastLineInfoCollection();
+    void ClearLastChessboardValues();
+#endif
 };
 
 #endif // #ifndef __POLICY_H_E4AC519F_30F6_447A_B737_DADAA6CCD9BE_INCLUDED__

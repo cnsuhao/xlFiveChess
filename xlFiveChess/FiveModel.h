@@ -16,11 +16,12 @@
 #include <xl/Common/Containers/xlArray.h>
 #include <xl/Common/Math/xlMathBase.h>
 
-static const int CHESSBOARD_SIZE    = 15;
-static const int CHESS_LENGTH         = 5;
+//#define DRAW_DEBUG_INFO
 
-static const wchar_t * const COORD_TAG_HORZ[CHESSBOARD_SIZE] = { L"A", L"B", L"C", L"D", L"E", L"F", L"G", L"H", L"I", L"J", L"K", L"L", L"M", L"N", L"O" };
-static const wchar_t * const COORD_TAG_VERT[CHESSBOARD_SIZE] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11", L"12", L"13", L"14", L"15" };
+static const int CHESSBOARD_SIZE    = 15;
+static const int CHESS_LENGTH       = 5;
+
+typedef double ChessboardValue[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
 
 enum ChessmanColor
 {
