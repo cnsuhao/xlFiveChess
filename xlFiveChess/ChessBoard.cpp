@@ -213,7 +213,7 @@ void ChessBoard::DrawDebugInfo(HDC hDC)
             LogicalToPhysical(pt);
             RECT rc = { pt.x, pt.y, pt.x + m_nBlockSize, pt.y + m_nBlockSize };
 
-            swprintf_s(szValue, L"%-.2lf", values[i][j]);
+            swprintf_s(szValue, L"%.1g", values[i][j]);
             DrawText(hDC, szValue, -1, &rc, DT_SINGLELINE | DT_LEFT | DT_TOP);
         }
     }
@@ -250,7 +250,7 @@ void ChessBoard::DrawDebugInfo(HDC hDC)
         LineTo(hDC, (pt2.x), (pt2.y));
         RECT rc = { pt2.x, pt2.y, pt2.x + m_nBlockSize, pt2.y + m_nBlockSize };
 
-        swprintf_s(szValue, L"%-.2lf", dValue);
+        swprintf_s(szValue, L"%.1g", dValue);
         DrawText(hDC, szValue, -1, &rc, DT_SINGLELINE | DT_LEFT | DT_TOP);
     }
 

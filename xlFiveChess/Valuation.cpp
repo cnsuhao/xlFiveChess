@@ -34,21 +34,28 @@ double Valuation::EvalLine(const LineInfo &li)
         Shader_More,                // 如果定义的 CHESS_LENGTH 不是 5，下面不再列出棋型名称，只要把评分表补全即可
     };
 
-    static const double VALUE_DEF[CHESS_LENGTH * 2 - 1] =
+    enum State
     {
-                                      //   基本分  有跳格  走阳线  走阴线
-        /*Shader_Five,                */ { 1e8 },
-        /*Shader_DoubleAliveFour,     */ { 1e6 },
-        /*Shader_SingleAliveFour,     */ { 1e5 },
-        /*Shader_DoubleAliveThree,    */ { 1e5 },
-        /*Shader_SingleAliveThree,    */ { 200 },
-        /*Shader_DoubleAliveTwo,      */ { 300 },
-        /*Shader_SingleAliveTwo,      */ { 100 },
-        /*Shader_DoubleAliveOne,      */ { 50 },
-        /*Shader_SingleAliveOne,      */ { 10 },
+        State_Qblique = 0x01,
+        State_HasHole = 0x02,
+    };
+
+    static const double VALUE_DEF[CHESS_LENGTH * 2 - 1][4] =
+    {
+                                      //   直线无跳  斜线无跳  直线有跳  斜线有跳
+        /*Shader_Five,                */ { 1e100,   2e100,   1e90,    2e90    },
+        /*Shader_DoubleAliveFour,     */ { 1e90,    2e90,    1e80,    2e80    },
+        /*Shader_SingleAliveFour,     */ { 1e80,    2e80,    1e70,    2e70    },
+        /*Shader_DoubleAliveThree,    */ { 1e64,    2e64,    1e50,    2e50    },
+        /*Shader_SingleAliveThree,    */ { 1e32,    2e32,    1e24,    2e24    },
+        /*Shader_DoubleAliveTwo,      */ { 1e16,    2e16,    1e10,    2e10    },
+        /*Shader_SingleAliveTwo,      */ { 1e8,     2e8,     1e6,     2e6     },
+        /*Shader_DoubleAliveOne,      */ { 1e4,     1e4,     1e4,     1e4     },
+        /*Shader_SingleAliveOne,      */ { 1e2,     1e2,     1e2,     1e2     },
     };
 
     Shader shader = Shader_More;
+    unsigned int dwState = 0;
 
     if (li.Count >= CHESS_LENGTH && (li.Blank.HolePos == 0 || li.Blank.HolePos >= CHESS_LENGTH))
     {
@@ -71,7 +78,16 @@ double Valuation::EvalLine(const LineInfo &li)
         }
     }
 
-    return VALUE_DEF[shader];
+    if (li.Direction == Direction_DownLeft || li.Direction == Direction_DownRight)
+    {
+        dwState |= State_Qblique;
+    }
+    if (li.Blank.HolePos > 0)
+    {
+        dwState |= State_HasHole;
+    }
+
+    return VALUE_DEF[shader][dwState];
 }
 
 double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval, double *pOppsiteValue)

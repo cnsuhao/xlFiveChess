@@ -57,7 +57,7 @@ public:
             {
                 for (int j = 0; j < CHESSBOARD_SIZE; ++j)
                 {
-                    nBaseValue[i][j] = max(ptCenter.x, ptCenter.y) - max(abs(i - ptCenter.x), abs(j - ptCenter.y));
+                    nBaseValue[i][j] = 2 - max(abs(i - ptCenter.x), abs(j - ptCenter.y)) * 1.0 / max(ptCenter.x, ptCenter.y);
                 }
             }
         }
@@ -91,7 +91,7 @@ public:
                         dValueOfPoint += (dOppositeValue - dCurrentOppositeValue) + (dCurrentValue - dValue);
                     }
 
-                    dValueOfPoint += nBaseValue[i][j];
+                    //dValueOfPoint *= nBaseValue[i][j];
 #ifdef DRAW_DEBUG_INFO
                     g_LastChessboardValue[i][j] = dValueOfPoint;
 #endif
