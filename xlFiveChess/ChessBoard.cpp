@@ -120,8 +120,8 @@ bool ChessBoard::PhysicalToLogical(POINT &pt)
 
 void ChessBoard::DrawChessBoard(HDC hDC)
 {
-    static const wchar_t * const COORD_TAG_HORZ[CHESSBOARD_SIZE] = { L"A", L"B", L"C", L"D", L"E", L"F", L"G", L"H", L"I", L"J", L"K", L"L", L"M", L"N", L"O" };
-    static const wchar_t * const COORD_TAG_VERT[CHESSBOARD_SIZE] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11", L"12", L"13", L"14", L"15" };
+    static const wchar_t * const COORD_TAG_HORZ[] = { L"A", L"B", L"C", L"D", L"E", L"F", L"G", L"H", L"I", L"J", L"K", L"L", L"M", L"N", L"O" };
+    static const wchar_t * const COORD_TAG_VERT[] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11", L"12", L"13", L"14", L"15" };
 
     HPEN hPen = (HPEN)GetStockObject(BLACK_PEN);
     HPEN hOldPen = SelectPen(hDC, hPen);
@@ -209,11 +209,16 @@ void ChessBoard::DrawDebugInfo(HDC hDC)
     {
         for (int j = 0; j < CHESSBOARD_SIZE; ++j)
         {
+            if (data[i][j] != ChessmanColor_None)
+            {
+                continue;
+            }
+
             POINT pt = { i, j };
             LogicalToPhysical(pt);
             RECT rc = { pt.x, pt.y, pt.x + m_nBlockSize, pt.y + m_nBlockSize };
 
-            swprintf_s(szValue, L"%.1g", values[i][j]);
+            swprintf_s(szValue, L"%.1lf", values[i][j]);
             DrawText(hDC, szValue, -1, &rc, DT_SINGLELINE | DT_LEFT | DT_TOP);
         }
     }
@@ -250,7 +255,7 @@ void ChessBoard::DrawDebugInfo(HDC hDC)
         LineTo(hDC, (pt2.x), (pt2.y));
         RECT rc = { pt2.x, pt2.y, pt2.x + m_nBlockSize, pt2.y + m_nBlockSize };
 
-        swprintf_s(szValue, L"%.1g", dValue);
+        swprintf_s(szValue, L"%.1lf", dValue);
         DrawText(hDC, szValue, -1, &rc, DT_SINGLELINE | DT_LEFT | DT_TOP);
     }
 

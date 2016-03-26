@@ -16,7 +16,7 @@
 #include <xl/Common/Containers/xlArray.h>
 #include <xl/Common/Math/xlMathBase.h>
 
-#define DRAW_DEBUG_INFO
+//#define DRAW_DEBUG_INFO
 
 static const int CHESSBOARD_SIZE    = 15;
 static const int CHESS_LENGTH       = 5;

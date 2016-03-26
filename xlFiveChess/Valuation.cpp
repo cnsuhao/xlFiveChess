@@ -40,18 +40,18 @@ double Valuation::EvalLine(const LineInfo &li)
         State_HasHole = 0x02,
     };
 
-    static const double VALUE_DEF[CHESS_LENGTH * 2 - 1][4] =
+    static const double VALUE_DEF[][4] =
     {
                                       //   直线无跳  斜线无跳  直线有跳  斜线有跳
-        /*Shader_Five,                */ { 1e100,   2e100,   1e90,    2e90    },
-        /*Shader_DoubleAliveFour,     */ { 1e90,    2e90,    1e80,    2e80    },
-        /*Shader_SingleAliveFour,     */ { 1e80,    2e80,    1e70,    2e70    },
-        /*Shader_DoubleAliveThree,    */ { 1e64,    2e64,    1e50,    2e50    },
-        /*Shader_SingleAliveThree,    */ { 1e32,    2e32,    1e24,    2e24    },
-        /*Shader_DoubleAliveTwo,      */ { 1e16,    2e16,    1e10,    2e10    },
-        /*Shader_SingleAliveTwo,      */ { 1e8,     2e8,     1e6,     2e6     },
-        /*Shader_DoubleAliveOne,      */ { 1e4,     1e4,     1e4,     1e4     },
-        /*Shader_SingleAliveOne,      */ { 1e2,     1e2,     1e2,     1e2     },
+        /* Shader_Five,                */ { 16384,   16384,   16384,   16384 },
+        /* Shader_DoubleAliveFour,     */ { 8192,    8192,    1024,    1024  },
+        /* Shader_SingleAliveFour,     */ { 1024,    1024,    768,     768   },
+        /* Shader_DoubleAliveThree,    */ { 256,     256,     192,     192   },
+        /* Shader_SingleAliveThree,    */ { 64,      64,      48,      48    },
+        /* Shader_DoubleAliveTwo,      */ { 32,      32,      24,      24    },
+        /* Shader_SingleAliveTwo,      */ { 8,       8,       6,       6     },
+        /* Shader_DoubleAliveOne,      */ { 4,       4,       4,       4     },
+        /* Shader_SingleAliveOne,      */ { 1,       1,       -1,      -1    },
     };
 
     Shader shader = Shader_More;
@@ -65,12 +65,14 @@ double Valuation::EvalLine(const LineInfo &li)
     {
         for (int i = 1; i < _countof(VALUE_DEF) - 1; i += 2)
         {
-            if (li.Count >= CHESS_LENGTH - i && li.Blank.HeadRemain > 0 && li.Blank.TailRemain > 0 && li.Blank.HeadRemain + li.Blank.TailRemain > i + 1)
+            int n = (i + 1) / 2;
+
+            if (li.Count >= CHESS_LENGTH - n && li.Blank.HeadRemain + li.Blank.TailRemain + (li.Blank.HolePos > 0 ? 1 : 0) > n && li.Blank.HeadRemain > 0 && li.Blank.TailRemain > 0)
             {
                 shader = (Shader)i;
                 break;
             }
-            if (li.Count >= CHESS_LENGTH - i && li.Blank.HeadRemain + li.Blank.TailRemain > i)
+            if (li.Count >= CHESS_LENGTH - n && li.Blank.HeadRemain + li.Blank.TailRemain + (li.Blank.HolePos > 0 ? 1 : 0) >= n)
             {
                 shader = (Shader)(i + 1);
                 break;
@@ -87,7 +89,9 @@ double Valuation::EvalLine(const LineInfo &li)
         dwState |= State_HasHole;
     }
 
-    return VALUE_DEF[shader][dwState];
+    double dValue = VALUE_DEF[shader][dwState];
+    XL_ASSERT(dValue > 0);
+    return dValue;
 }
 
 double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval, double *pOppsiteValue)
@@ -190,6 +194,12 @@ ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanCol
                         i + DirectionDef[k].x * l < 0 ||
                         j + DirectionDef[k].y * l >= CHESSBOARD_SIZE)
                     {
+                        if (li.Blank.HolePos > 0 && li.Blank.TailRemain == 0 && l == li.Blank.HolePos + 1)
+                        {
+                            li.Blank.TailRemain = 1;
+                            li.Blank.HolePos = 0;
+                        }
+
                         break;
                     }
 

@@ -16,7 +16,7 @@
 #include <time.h>
 #include <float.h>
 #include <stdlib.h>
-
+#include "Log.h"
 
 struct IPolicy
 {
@@ -39,75 +39,97 @@ static ChessboardValue g_LastChessboardValue;
 ////////////////////////////////////////////////////////////////////////////////
 // AI，预测一步
 
-class PolicyForecastAI : public IPolicy
+class PolicyMinMaxSearch : public IPolicy
 {
 public:
     Point FindNextMove(const ChessData &data, ChessmanColor currentTurn) override
     {
-#ifdef DRAW_DEBUG_INFO
-        Policy::ClearLastChessboardValues();
-        Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &g_LastLineInfoCollection);
-#endif
-        static ChessboardValue nBaseValue = {};
-        Point ptCenter(CHESSBOARD_SIZE / 2, CHESSBOARD_SIZE / 2);
-
-        if (nBaseValue[ptCenter.x][ptCenter.y] == 0)
-        {
-            for (int i = 0; i < CHESSBOARD_SIZE; ++i)
-            {
-                for (int j = 0; j < CHESSBOARD_SIZE; ++j)
-                {
-                    nBaseValue[i][j] = 2 - max(abs(i - ptCenter.x), abs(j - ptCenter.y)) * 1.0 / max(ptCenter.x, ptCenter.y);
-                }
-            }
-        }
 
         ChessData &d = (ChessData &)data;
+        Point pt = INVALID_POSITION;
+        FindMinMax(d, currentTurn, 0, &pt);
+        return pt;
+    }
+
+private:
+    double FindMinMax(ChessData &data, ChessmanColor currentTurn, int nDeep, Point *pPoint = nullptr)
+    {
+#ifdef DRAW_DEBUG_INFO
+        if (nDeep == 0)
+        {
+            Policy::ClearLastChessboardValues();
+            Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &g_LastLineInfoCollection);
+        }
+#endif
         double dCurrentOppositeValue = 0;
-        double dCurrentValue = Valuation::EvalChessboard(d, currentTurn, &dCurrentOppositeValue);
+        double dCurrentValue = Valuation::EvalChessboard(data, currentTurn, &dCurrentOppositeValue);
 
         Point pt = INVALID_POSITION;    // 最佳点
-        double dValueMax = -DBL_MAX;     // 下在最佳点后的局面评分
+        double dValueMax = -DBL_MAX;    // 下在最佳点后的局面评分
 
         for (int i = 0; i < CHESSBOARD_SIZE; ++i)
         {
             for (int j = 0; j < CHESSBOARD_SIZE; ++j)
             {
-                if (data[i][j] == ChessmanColor_None)
+                if (data[i][j] != ChessmanColor_None)
                 {
-                    double dValueOfPoint = 0;
+                    continue;
+                }
+
+                double dValueOfPoint = 0;
+                if (nDeep >= MAX_DEEP)
+                {
                     // 我方下在 [i][j] 点时，我方增加的局面分和对方减少的局面分
                     {
-                        d[i][j] = currentTurn;
+                        data[i][j] = currentTurn;
                         double dOppositeValue;
-                        double dValue =  Valuation::EvalChessboard(d, currentTurn, &dOppositeValue);
+                        double dValue = Valuation::EvalChessboard(data, currentTurn, &dOppositeValue);
                         dValueOfPoint += (dValue - dCurrentValue) + (dCurrentOppositeValue - dOppositeValue);
                     }
                     // 对方下在 [i][j] 点时，对方增加的局面分和我方减少的局面分
                     {
-                        d[i][j] = !currentTurn;
+                        data[i][j] = !currentTurn;
                         double dOppositeValue;
-                        double dValue = Valuation::EvalChessboard(d, currentTurn, &dOppositeValue);
-                        dValueOfPoint += (dOppositeValue - dCurrentOppositeValue) + (dCurrentValue - dValue);
+                        double dValue = Valuation::EvalChessboard(data, currentTurn, &dOppositeValue);
+                        dValueOfPoint += ((dOppositeValue - dCurrentOppositeValue) + (dCurrentValue - dValue)) / 2;
                     }
 
-                    //dValueOfPoint *= nBaseValue[i][j];
+                    data[i][j] = ChessmanColor_None;
+                }
+                else
+                {
+                    data[i][j] = currentTurn;
+                    Point pt;
+                    dValueOfPoint = -FindMinMax(data, !currentTurn, nDeep + 1, &pt);
+                    data[i][j] = ChessmanColor_None;
+                }
+
 #ifdef DRAW_DEBUG_INFO
+                if (nDeep == 0)
+                {
                     g_LastChessboardValue[i][j] = dValueOfPoint;
+                }
 #endif
-                    d[i][j] = ChessmanColor_None;
 
-                    if (dValueOfPoint > dValueMax)
-                    {
-                        dValueMax = dValueOfPoint;
-                        pt = Point(i, j);
-                    }
+                if (dValueOfPoint > dValueMax ||
+                   dValueOfPoint == dValueMax && max(abs(i - CHESSBOARD_SIZE / 2), abs(j - CHESSBOARD_SIZE / 2)) < max(abs(pt.x - CHESSBOARD_SIZE / 2), abs(pt.y - CHESSBOARD_SIZE / 2)))
+                {
+                    dValueMax = dValueOfPoint;
+                    pt = Point(i, j);
                 }
             }
         }
 
-        return pt;
+        if (pPoint != nullptr)
+        {
+            *pPoint = pt;
+        }
+
+        return dValueMax;
     }
+
+private:
+    static const int MAX_DEEP = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -267,7 +289,7 @@ class PolicyCenter : public IPolicy
 
 static IPolicy *g_Policies[Policy_Count] =
 {
-    /* Policy_DorecastAI          => */ new PolicyForecastAI,
+    /* Policy_MinMaxSearch        => */ new PolicyMinMaxSearch,
     /* Policy_SimpleAI            => */ new PolicySimpleAI,
     /* Policy_Random              => */ new PolicyRandom,
     /* Policy_Center              => */ new PolicyCenter,
