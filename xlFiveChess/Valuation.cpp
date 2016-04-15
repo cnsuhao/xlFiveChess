@@ -94,7 +94,7 @@ double Valuation::EvalLine(const LineInfo &li)
     return dValue;
 }
 
-double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval, double *pOppsiteValue)
+double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEval)
 {
     LineInfoCollection lic;
     Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &lic);
@@ -111,12 +111,7 @@ double Valuation::EvalChessboard(const ChessData &data, ChessmanColor colorToEva
         dValues[it->Color] += EvalLine(*it);
     }
 
-    if (pOppsiteValue != nullptr)
-    {
-        *pOppsiteValue = dValues[!colorToEval];
-    }
-
-    return dValues[colorToEval];
+    return dValues[colorToEval] - dValues[!colorToEval];
 }
 
 ChessmanColor Valuation::FindLine(const ChessData &data, int nCount, ChessmanColor colorToFind, bool bFindAll, bool bAllowHole, LineInfoCollection *pResult)
