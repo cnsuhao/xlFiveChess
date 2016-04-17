@@ -61,7 +61,6 @@ private:
             Valuation::FindLine(data, 1, ChessmanColor_None, true, true, &g_LastLineInfoCollection);
         }
 #endif
-        double dCurrentValue = Valuation::EvalChessboard(data, currentTurn);
 
         Point pt = INVALID_POSITION;    // 最佳点
         double dValueMax = -DBL_MAX;    // 下在最佳点后的局面评分
@@ -78,19 +77,8 @@ private:
                 double dValueOfPoint = 0;
                 if (nDeep >= MAX_DEEP)
                 {
-                    // 我方下在 [i][j] 点时，增加的局面分
-                    {
-                        data[i][j] = currentTurn;
-                        double dValue = Valuation::EvalChessboard(data, currentTurn);
-                        dValueOfPoint += (dValue - dCurrentValue);
-                    }
-                    // 对方下在 [i][j] 点时，减少的局面分
-                    {
-                        data[i][j] = !currentTurn;
-                        double dValue = Valuation::EvalChessboard(data, currentTurn);
-                        dValueOfPoint += (dCurrentValue - dValue);
-                    }
-
+                    data[i][j] = currentTurn;
+                    dValueOfPoint = Valuation::EvalChessboard(data, currentTurn);
                     data[i][j] = ChessmanColor_None;
                 }
                 else
@@ -126,7 +114,7 @@ private:
     }
 
 private:
-    static const int MAX_DEEP = 0;
+    static const int MAX_DEEP = 1;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

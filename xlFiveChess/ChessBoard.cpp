@@ -209,10 +209,10 @@ void ChessBoard::DrawDebugInfo(HDC hDC)
     {
         for (int j = 0; j < CHESSBOARD_SIZE; ++j)
         {
-            if (data[i][j] != ChessmanColor_None)
-            {
-                continue;
-            }
+            //if (data[i][j] != ChessmanColor_None)
+            //{
+            //    continue;
+            //}
 
             POINT pt = { i, j };
             LogicalToPhysical(pt);
