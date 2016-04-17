@@ -13,7 +13,7 @@
 #define __CHESSBOARD_H_1C59B29F_E989_4420_8CCA_202D5900AFB7_INCLUDED__
 
 
-#include <xl/Windows/GUI/xlWindow.h>z
+#include <xl/Windows/GUI/xlWindow.h>
 #include "FiveChess.h"
 
 class ChessBoard : public xl::Windows::Window

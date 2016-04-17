@@ -47,12 +47,12 @@ public:
 
         ChessData &d = (ChessData &)data;
         Point pt = INVALID_POSITION;
-        FindMinMax(d, currentTurn, 0, &pt);
+        FindMinMax(d, currentTurn, DBL_MAX, 0, &pt);
         return pt;
     }
 
 private:
-    double FindMinMax(ChessData &data, ChessmanColor currentTurn, int nDeep, Point *pPoint = nullptr)
+    double FindMinMax(ChessData &data, ChessmanColor currentTurn, double dAplhaPruning, int nDeep, Point *pPoint = nullptr)
     {
 #ifdef DRAW_DEBUG_INFO
         if (nDeep == 0)
@@ -64,10 +64,11 @@ private:
 
         Point pt = INVALID_POSITION;    // 最佳点
         double dValueMax = -DBL_MAX;    // 下在最佳点后的局面评分
+        bool bBreak = false;
 
-        for (int i = 0; i < CHESSBOARD_SIZE; ++i)
+        for (int i = 0; i < CHESSBOARD_SIZE && !bBreak; ++i)
         {
-            for (int j = 0; j < CHESSBOARD_SIZE; ++j)
+            for (int j = 0; j < CHESSBOARD_SIZE && !bBreak; ++j)
             {
                 if (data[i][j] != ChessmanColor_None)
                 {
@@ -85,8 +86,15 @@ private:
                 {
                     data[i][j] = currentTurn;
                     Point pt;
-                    dValueOfPoint = -FindMinMax(data, !currentTurn, nDeep + 1, &pt);
+                    dValueOfPoint = -FindMinMax(data, !currentTurn, -dValueMax, nDeep + 1, &pt);
                     data[i][j] = ChessmanColor_None;
+
+                    if (dValueOfPoint > dAplhaPruning)
+                    {
+                        bBreak = true;
+                        break;
+                    }
+
                 }
 
 #ifdef DRAW_DEBUG_INFO
@@ -114,7 +122,7 @@ private:
     }
 
 private:
-    static const int MAX_DEEP = 1;
+    static const int MAX_DEEP = 2;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
