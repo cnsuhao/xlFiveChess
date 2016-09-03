@@ -1,5 +1,4 @@
 /.vs/*
-/.vscode/*
 *.exe
 *.obj
 *.pdb
@@ -12,9 +11,7 @@
 *.res
 *.mdmp
 *.sdf
-*.opensdf
 *.aps
-*.cso
 *.VC.db
 *.VC.opendb
 *.user
