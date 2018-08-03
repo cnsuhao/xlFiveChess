@@ -122,7 +122,7 @@ private:
     }
 
 private:
-    static const int MAX_DEEP = 2;
+    static const int MAX_DEEP = 1;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
